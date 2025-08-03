@@ -27,7 +27,7 @@
 
 <style>
     .button {
-        font-family: 'MSSS', Arial, Helvetica, sans-serif;
+        font-family: 'Tahoma', 'MSSS', Arial, Helvetica, sans-serif;
         -webkit-font-smoothing: antialiased;
         font-size: 11px;
         box-sizing: border-box;

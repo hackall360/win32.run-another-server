@@ -37,7 +37,7 @@ export function tooltip(element) {
 		comp.style.boxShadow = '0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1)';
 		comp.style.overflow = 'hidden';
 		comp.style.padding = '4px';
-		comp.style.fontFamily = 'MSSS';
+                comp.style.fontFamily = 'Tahoma, MSSS';
 		comp.innerHTML = `
 			<p class=" line-clamp-1 leading-tight text-ellipsis" style="font-size:11px;">
 				${tooltip_message}
