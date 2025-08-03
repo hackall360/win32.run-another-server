@@ -39,6 +39,15 @@
         } else if(type == 'RecycleBin'){
             menu_obj = (await import('./context_menu/RecycleBin')).make({type, originator});
 
+        } else if(type == 'TrayNetwork'){
+            menu_obj = (await import('./context_menu/CMTrayNetwork')).make({type, originator});
+
+        } else if(type == 'TraySafelyRemove'){
+            menu_obj = (await import('./context_menu/CMTraySafelyRemove')).make({type, originator});
+
+        } else if(type == 'TrayWindowsUpdate'){
+            menu_obj = (await import('./context_menu/CMTrayWindowsUpdate')).make({type, originator});
+
         } else {
             console.log('unknown context menu type')
         }

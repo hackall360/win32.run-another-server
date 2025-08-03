@@ -8,6 +8,10 @@
         console.log('on click')
     }
 
+    export let on_contextmenu = (e) => {
+        // optional right click handler
+    }
+
     function on_mouseenter(e){
         if(tooltip_message == null) return;
         let position = {left: e.x, top: e.y - 40};
@@ -24,6 +28,8 @@
 
 </script>
 
-<div class="mr-1 w-4 h-4 bg-no-repeat bg-contain" style:background-image="url({icon})" 
-    on:click={on_click} use:tooltip tooltip="{tooltip_message}">
+<div class="mr-1 w-4 h-4 bg-no-repeat bg-contain" style:background-image="url({icon})"
+    on:click={on_click}
+    on:contextmenu={on_contextmenu}
+    use:tooltip tooltip="{tooltip_message}">
 </div>

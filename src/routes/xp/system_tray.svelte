@@ -1,6 +1,6 @@
 <script>
     import { onMount, onDestroy } from 'svelte';
-    import { queueProgram, systemVolume } from '../../lib/store';
+    import { queueProgram, systemVolume, contextMenu } from '../../lib/store';
     import TrayIcon from '../../lib/components/xp/TrayIcon.svelte';
 
     let time = get_time();
@@ -27,6 +27,35 @@
         program.self = program;
     }
 
+    function open_network_status(){
+        queueProgram.set({
+            name: 'Network Connections',
+            icon: '/images/xp/icons/ConnectionStatus.png',
+            path: './programs/network_status.svelte'
+        });
+    }
+
+    function open_safely_remove(){
+        queueProgram.set({
+            name: 'Safely Remove Hardware',
+            icon: '/images/xp/icons/SafelyRemoveHardware.png',
+            path: './programs/safely_remove_hardware.svelte'
+        });
+    }
+
+    function open_windows_update(){
+        queueProgram.set({
+            name: 'Windows Update',
+            icon: '/images/xp/icons/WindowsUpdate.png',
+            path: './programs/windows_update.svelte'
+        });
+    }
+
+    function show_context_menu(type, ev){
+        contextMenu.set(null);
+        contextMenu.set({x: ev.x, y: ev.y, type, originator: {}});
+    }
+
 </script>
 
 <style>
@@ -50,6 +79,15 @@
                     path: './programs/xp_tour.svelte'
                 })
             }}></TrayIcon>
+    <TrayIcon icon="/images/xp/icons/ConnectionStatus.png" tooltip_message="Local Area Connection"
+            on_click={open_network_status}
+            on_contextmenu={(ev) => show_context_menu('TrayNetwork', ev)}></TrayIcon>
+    <TrayIcon icon="/images/xp/icons/SafelyRemoveHardware.png" tooltip_message="Safely Remove Hardware"
+            on_click={open_safely_remove}
+            on_contextmenu={(ev) => show_context_menu('TraySafelyRemove', ev)}></TrayIcon>
+    <TrayIcon icon="/images/xp/icons/WindowsUpdate.png" tooltip_message="Automatic Updates"
+            on_click={open_windows_update}
+            on_contextmenu={(ev) => show_context_menu('TrayWindowsUpdate', ev)}></TrayIcon>
     <TrayIcon icon="/images/xp/icons/SecurityError.png"></TrayIcon>
     <TrayIcon icon="{$systemVolume > 0.03 ? '/images/xp/icons/Volume.png' : '/images/xp/icons/Mute.png'}" tooltip_message="Adjust volume" on_click={open_volume_adjust}></TrayIcon>
     <span class="text-slate-50 text-[11px] px-1">{time}</span>
