@@ -3,15 +3,18 @@ import basicSsl from '@vitejs/plugin-basic-ssl';
 
 /** @type {import('vite').UserConfig} */
 const config = {
-	plugins: [
-		sveltekit(),
-		// basicSsl()
-	],
-	server: {
-		host: true,
-		// https: true,
-		port: 3000
-	}
+        plugins: [
+                sveltekit(),
+                // basicSsl()
+        ],
+       server: {
+               host: true,
+               // https: true,
+               port: 3000
+       },
+       optimizeDeps: {
+               include: ['jquery', 'jquery-ui']
+       }
 };
 
 export default config;
