@@ -8,6 +8,35 @@ import * as idb from 'idb-keyval';
 import * as finder from './finder';
 import {Buffer} from 'buffer';
 
+export function search_fs(query){
+    if(utils.is_empty(query)) return [];
+    query = query.toLowerCase();
+    let data = get(hardDrive);
+    return Object.values(data).filter(item => item?.name?.toLowerCase().includes(query));
+}
+
+export function run_command(command){
+    if(utils.is_empty(command)) return;
+    let id = finder.to_id(command) || finder.to_id_nocase(command);
+    if(id){
+        queueProgram.set({path: './programs/my_computer.svelte', fs_item: {id}});
+        return;
+    }
+    if(/^https?:\/\//i.test(command)){
+        queueProgram.set({path: './programs/internet_explorer.svelte', fs_item: {url: command}});
+        return;
+    }
+    let apps = {
+        'notepad': './programs/notepad.svelte',
+        'mspaint': './programs/paint.svelte',
+        'control panel': './programs/control_panel.svelte'
+    };
+    let lower = command.toLowerCase();
+    if(apps[lower]){
+        queueProgram.set({path: apps[lower]});
+    }
+}
+
 export function copy(){
     clipboard_op.set('copy');
     clipboard.set(get(selectingItems));

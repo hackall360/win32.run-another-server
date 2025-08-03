@@ -82,7 +82,7 @@
         {
             name: 'Control Panel',
             icon: '/images/xp/icons/ControlPanel.png',
-            path: ''
+            path: './programs/control_panel.svelte'
         },
         {
             name: 'Display Properties',
@@ -104,12 +104,12 @@
         {
             name: 'Search',
             icon: '/images/xp/icons/Search.png',
-            path: ''
+            path: './programs/search.svelte'
         },
         {
             name: 'Run...',
             icon: '/images/xp/icons/Run.png',
-            path: ''
+            path: './programs/run_dialog.svelte'
         }
     ]
 
