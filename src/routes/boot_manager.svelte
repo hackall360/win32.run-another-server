@@ -6,14 +6,12 @@
     let dispatcher = createEventDispatcher();
 
     let is_chromium = true;
-    onMount(() => {
-        //load jquery
-        loadjs([
-            'https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.1/jquery.min.js',
-            'https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.13.2/jquery-ui.min.js',
-            'https://code.jquery.com/ui/1.13.2/themes/base/jquery-ui.css'
-        ], {async: false});
-        
+    onMount(async () => {
+        const $ = (await import('jquery')).default;
+        window.$ = window.jQuery = $;
+        await import('jquery-ui/dist/jquery-ui.js');
+        await import('jquery-ui/dist/themes/base/jquery-ui.css');
+
         utils.set_theme('none');
         is_chromium = window.chrome != null;
     })
