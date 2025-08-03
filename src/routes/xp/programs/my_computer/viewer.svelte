@@ -61,7 +61,12 @@
     $: is_focus = $zIndex == my_computer_instance?.window.z_index;
     let computer = my_computer.map(el => $hardDrive[el]);
 
+    let area_ref;
     let node_ref;
+    let address_value = '';
+    $: address_value = id == null ? 'My Computer' : finder.to_url(id);
+    let view_mode = 'icons';
+
     $: {
         if(id != null && $hardDrive[id] == null){
             dispatch('open', {id: null});
@@ -83,19 +88,53 @@
        console.log($selectingItems.map(el => $hardDrive[el]));
     });
     const observer = new MutationObserver(mutations => {
-        ds.setSettings({
-            selectables: node_ref ? node_ref.querySelectorAll('.fs-item') : []
-        })
+        if(area_ref){
+            ds.setSettings({
+                selectables: node_ref ? node_ref.querySelectorAll('.fs-item') : [],
+                area: area_ref
+            })
+        }
     });
 
     onMount(async () => {
-        ds.setSettings({
-            selectables: node_ref.querySelectorAll('.fs-item'),
-            area: node_ref
-        })
+        if(area_ref){
+            ds.setSettings({
+                selectables: node_ref.querySelectorAll('.fs-item'),
+                area: area_ref
+            })
+        }
         observer.observe(node_ref, {attributes: false, childList: true, characterData: false, subtree:true});
 
     })
+
+    $: {
+        view_mode; // re-evaluate selectables when view changes
+        if(area_ref){
+            ds.setSettings({
+                selectables: node_ref ? node_ref.querySelectorAll('.fs-item') : [],
+                area: area_ref
+            });
+        }
+    }
+
+    function on_address_key(e){
+        if(e.key == 'Enter'){
+            let path = address_value.trim();
+            if(path.toLowerCase() == 'my computer' || path == ''){
+                dispatch('open', {id: null});
+                return;
+            }
+            let new_id = finder.to_id_nocase(path);
+            if(new_id != null){
+                dispatch('open', {id: new_id});
+            }
+        }
+    }
+
+    function set_view(mode){
+        view_mode = mode;
+        clear_selection();
+    }
 
     function on_rightclick(ev, item){
         let selected = $selectingItems.includes(item.id);
@@ -277,96 +316,123 @@
 </script>
 
 <style>
-    .ds-selected {
-        outline: 3px solid black;
-        outline-offset: 3px;
-        color: black;
-        font-weight: bold;
+    /* @svelte-ignore unused-selector */
+    .fs-item.ds-selected {
+        background-color: rgb(37 99 235);
+        color: white;
     }
 </style>
-<div class="absolute inset-0 overflow-auto bg-slate-50"
-    on:drop={on_drop} on:dragover={on_drop_over} bind:this={node_ref}>
-    <div class="w-full min-h-[90%]" class:hidden={id == null} 
-        on:contextmenu|self={show_void_menu}>
-        {#if sorted_items}
-            {#each sorted_items as item (item.id)}
-                <div fs-id="{item.id}" class="fs-item w-[150px] overflow-hidden m-2 inline-flex flex-row items-center font-MSSS relative
-                    {$clipboard.includes(item.id) && $clipboard_op == 'cut' ? 'opacity-70' : ''}" 
-                    on:dblclick={() => open(item.id)} on:contextmenu={(e) => on_rightclick(e, item)}>
-                    {#if previewable_exts.includes(item.ext)}
-                        <Previewable default_icon={file_icon(item)} fs_id={item.id}></Previewable>
-                    {:else}
-                        <div class="w-[50px] h-[50px] shrink-0 bg-contain bg-no-repeat bg-center
-                        {item.type == 'folder' ? 'bg-[url(/images/xp/icons/FolderClosed.png)]' : 'bg-[url(/images/xp/icons/Default.png)]'} "
-                            style:background-image="{file_icon(item)}">
+
+<div class="absolute inset-0 flex flex-col bg-slate-50">
+    <div class="shrink-0 flex flex-row items-center border-b border-stone-300 text-[11px]">
+        <span class="px-2 text-slate-800">Address</span>
+        <div class="grow h-[25px] relative">
+            <input class="absolute inset-0 pl-7 outline-none" bind:value={address_value} on:keyup={on_address_key}>
+            <div class="w-[17px] h-[17px] absolute top-[4px] left-[4px] bg-contain bg-no-repeat"
+                style:background-image="{file_icon($hardDrive[id])}"></div>
+        </div>
+        <div class="flex flex-row pr-1">
+            <button class="px-1" on:click={() => set_view('icons')} title="Icons">I</button>
+            <button class="px-1" on:click={() => set_view('list')} title="List">L</button>
+            <button class="px-1" on:click={() => set_view('details')} title="Details">D</button>
+        </div>
+    </div>
+
+    <div class="grow overflow-auto" bind:this={area_ref} on:drop={on_drop} on:dragover={on_drop_over}>
+        <div class="w-full min-h-[90%]" class:hidden={id == null} on:contextmenu|self={show_void_menu} bind:this={node_ref}>
+            {#if sorted_items}
+                {#if view_mode == 'details'}
+                    <div class="flex flex-row text-[11px] font-bold border-b border-slate-300 select-none">
+                        <div class="flex-1 pl-8">Name</div>
+                        <div class="w-[120px]">Type</div>
+                    </div>
+                    {#each sorted_items as item (item.id)}
+                        <div fs-id="{item.id}" class="fs-item flex flex-row items-center text-[11px] border-b border-slate-200"
+                            on:dblclick={() => open(item.id)} on:contextmenu={(e) => on_rightclick(e, item)}>
+                            {#if previewable_exts.includes(item.ext)}
+                                <Previewable default_icon={file_icon(item)} fs_id={item.id} class="w-[20px] h-[20px] ml-1"></Previewable>
+                            {:else}
+                                <div class="w-[20px] h-[20px] ml-1 bg-contain bg-no-repeat bg-center {item.type == 'folder' ? 'bg-[url(/images/xp/icons/FolderClosed.png)]' : 'bg-[url(/images/xp/icons/Default.png)]'}" style:background-image="{file_icon(item)}"></div>
+                            {/if}
+                            <div class="flex-1 pl-2">{item.name}</div>
+                            <div class="w-[120px] pr-2">{item.ext}</div>
                         </div>
-                    {/if}
-                    <p class="px-1 mx-0.5 text-[11px] break-words line-clamp-2 text-ellipsis leading-tight
-                        {$selectingItems?.includes(item.id) && is_focus ? 'bg-blue-600 text-slate-50' : ''}">
-                        {item.name}
-                    </p>
-                    {#if $selectingItems.includes(item.id) && renaming}
-                        <textarea
-                            autofocus
-                            on:keydown={e => e.key == 'Enter' && end_renaming(e, item)}
-                            on:blur={(e) => end_renaming(e, item)}
-                            class="absolute max-h-[40px] right-0 top-2 left-[50px] overflow-hidden 
-                            outline-none border border-slate-900 text-[11px] font-MSSS z-50 resize-none"
-                        >{item.name}</textarea>
-                    {/if}
-                    
+                    {/each}
+                {:else if view_mode == 'list'}
+                    {#each sorted_items as item (item.id)}
+                        <div fs-id="{item.id}" class="fs-item flex flex-row items-center w-full text-[11px] px-1 py-0.5"
+                            on:dblclick={() => open(item.id)} on:contextmenu={(e) => on_rightclick(e, item)}>
+                            {#if previewable_exts.includes(item.ext)}
+                                <Previewable default_icon={file_icon(item)} fs_id={item.id} class="w-[20px] h-[20px]"></Previewable>
+                            {:else}
+                                <div class="w-[20px] h-[20px] bg-contain bg-no-repeat bg-center {item.type == 'folder' ? 'bg-[url(/images/xp/icons/FolderClosed.png)]' : 'bg-[url(/images/xp/icons/Default.png)]'}" style:background-image="{file_icon(item)}"></div>
+                            {/if}
+                            <p class="ml-2 flex-1 leading-tight">{item.name}</p>
+                        </div>
+                    {/each}
+                {:else}
+                    <div class="flex flex-row flex-wrap">
+                        {#each sorted_items as item (item.id)}
+                            <div fs-id="{item.id}" class="fs-item w-[80px] m-2 flex flex-col items-center text-[11px]"
+                                on:dblclick={() => open(item.id)} on:contextmenu={(e) => on_rightclick(e, item)}>
+                                {#if previewable_exts.includes(item.ext)}
+                                    <Previewable default_icon={file_icon(item)} fs_id={item.id} class="w-[48px] h-[48px]"></Previewable>
+                                {:else}
+                                    <div class="w-[48px] h-[48px] bg-contain bg-no-repeat bg-center {item.type == 'folder' ? 'bg-[url(/images/xp/icons/FolderClosed.png)]' : 'bg-[url(/images/xp/icons/Default.png)]'}" style:background-image="{file_icon(item)}"></div>
+                                {/if}
+                                <p class="mt-1 text-center break-words leading-tight">{item.name}</p>
+                            </div>
+                        {/each}
+                    </div>
+                {/if}
+            {:else}
+                <p class="text-center text-sm font-Trebuchet my-2 text-slate-500">working on it...</p>
+            {/if}
+        </div>
+
+        <div class="w-full" class:hidden={id != null}>
+
+            <p class="ml-2 mt-0.5 font-MSSS text-black text-[11px] font-bold">Files Stored on This Computer</p>
+            <div class="mb-4 w-[300px] h-[2px] bg-gradient-to-r from-blue-500 to-slate-50"></div>
+            {#each computer.filter(el => el.type == 'folder') as item}
+                <div class="w-[150px] ml-4 mr-8 overflow-hidden inline-flex flex-row items-center font-MSSS"
+                    on:dblclick={() => open(item.id)} on:contextmenu={(e) => on_rightclick(e, item)}>
+                    <div class="w-[50px] h-[50px] shrink-0 bg-[url(/images/xp/icons/FolderClosed.png)] bg-contain"
+                        style:background-image="{item.icon == null ? '' : `url(${item.icon})`}">
+                    </div>
+                    <div class="px-1 text-[11px] line-clamp-2 text-ellipsis leading-tight">
+                        {item.display_name != null ? item.display_name : item.name}
+                    </div>
                 </div>
             {/each}
-        {:else}
-            <p class="text-center text-sm font-Trebuchet my-2 text-slate-500">working on it...</p>
-        {/if}
 
-        
+            <p class="ml-2 mt-4 font-MSSS text-black text-[11px] font-bold">Hard Disk Drives</p>
+            <div class="mb-4 w-[300px] h-[2px] bg-gradient-to-r from-blue-500 to-slate-50"></div>
+            {#each computer.filter(el => el.type == 'drive') as item}
+                <div class="w-[150px] ml-4 mr-8 overflow-hidden inline-flex flex-row items-center font-MSSS"
+                    on:dblclick={() => open(item.id)} on:contextmenu={(e) => on_rightclick(e, item)}>
+                    <div class="w-[50px] h-[50px] shrink-0 bg-[url(/images/xp/icons/LocalDisk.png)] bg-contain">
+                    </div>
+                    <div class="px-1 text-[11px] line-clamp-2 text-ellipsis leading-tight">
+                        {item.display_name != null ? item.display_name : item.name}
+                    </div>
+                </div>
+            {/each}
+
+            <p class="ml-2 mt-4 font-MSSS text-black text-[11px] font-bold">Devices with Removable Storage</p>
+            <div class="mb-4 w-[300px] h-[2px] bg-gradient-to-r from-blue-500 to-slate-50"></div>
+            {#each computer.filter(el => el.type == 'removable_storage') as item}
+                <div class="w-[150px] ml-4 mr-8 overflow-hidden inline-flex flex-row items-center font-MSSS"
+                    on:dblclick={() => open(item.id)} on:contextmenu={(e) => on_rightclick(e, item)}>
+                    <div class="w-[50px] h-[50px] shrink-0 bg-[url(/images/xp/icons/RemovableMedia.png)] bg-contain">
+                    </div>
+                    <div class="px-1 text-[11px] line-clamp-2 text-ellipsis leading-tight">
+                        {item.display_name != null ? item.display_name : item.name}
+                    </div>
+                </div>
+            {/each}
+        </div>
     </div>
-
-    <div class="w-full" class:hidden={id != null}>
-
-        <p class="ml-2 mt-0.5 font-MSSS text-black text-[11px] font-bold">Files Stored on This Computer</p>
-        <div class="mb-4 w-[300px] h-[2px] bg-gradient-to-r from-blue-500 to-slate-50"></div>
-        {#each computer.filter(el => el.type == 'folder') as item}
-            <div class="w-[150px] ml-4 mr-8 overflow-hidden inline-flex flex-row items-center font-MSSS" 
-                on:dblclick={() => open(item.id)} on:contextmenu={(e) => on_rightclick(e, item)}>
-                <div class="w-[50px] h-[50px] shrink-0 bg-[url(/images/xp/icons/FolderClosed.png)] bg-contain"
-                    style:background-image="{item.icon == null ? '' : `url(${item.icon})`}">
-                </div>
-                <div class="px-1 text-[11px] line-clamp-2 text-ellipsis leading-tight">
-                    {item.display_name != null ? item.display_name : item.name}
-                </div>
-            </div>
-        {/each}
-
-        <p class="ml-2 mt-4 font-MSSS text-black text-[11px] font-bold">Hard Disk Drives</p>
-        <div class="mb-4 w-[300px] h-[2px] bg-gradient-to-r from-blue-500 to-slate-50"></div>
-        {#each computer.filter(el => el.type == 'drive') as item}
-            <div class="w-[150px] ml-4 mr-8 overflow-hidden inline-flex flex-row items-center font-MSSS" 
-                on:dblclick={() => open(item.id)} on:contextmenu={(e) => on_rightclick(e, item)}>
-                <div class="w-[50px] h-[50px] shrink-0 bg-[url(/images/xp/icons/LocalDisk.png)] bg-contain">
-                </div>
-                <div class="px-1 text-[11px] line-clamp-2 text-ellipsis leading-tight">
-                    {item.display_name != null ? item.display_name : item.name}
-                </div>
-            </div>
-        {/each}
-
-        <p class="ml-2 mt-4 font-MSSS text-black text-[11px] font-bold">Devices with Removable Storage</p>
-        <div class="mb-4 w-[300px] h-[2px] bg-gradient-to-r from-blue-500 to-slate-50"></div>
-        {#each computer.filter(el => el.type == 'removable_storage') as item}
-            <div class="w-[150px] ml-4 mr-8 overflow-hidden inline-flex flex-row items-center font-MSSS" 
-                on:dblclick={() => open(item.id)} on:contextmenu={(e) => on_rightclick(e, item)}>
-                <div class="w-[50px] h-[50px] shrink-0 bg-[url(/images/xp/icons/RemovableMedia.png)] bg-contain">
-                </div>
-                <div class="px-1 text-[11px] line-clamp-2 text-ellipsis leading-tight">
-                    {item.display_name != null ? item.display_name : item.name}
-                </div>
-            </div>
-        {/each}
-    </div>
-
 </div>
 
 <svelte:options accessors={true}></svelte:options>
