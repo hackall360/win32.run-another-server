@@ -1,5 +1,5 @@
 <script>
-    import {hardDrive, queueProgram } from '../../lib/store';
+    import {hardDrive, queueProgram, startMenuOpen } from '../../lib/store';
     import { my_pictures_id, my_music_id } from '../../lib/system';
     import * as utils from '../../lib/utils';
     const { click_outside } = utils;
@@ -408,10 +408,7 @@
     ]
 
     function hide(){
-        let el = document.querySelector('#start-menu');
-        if(!el.classList.contains('hidden')){
-            el.classList.add('hidden');
-        }
+        startMenuOpen.set(false);
     }
 
     function launch(item){
@@ -448,7 +445,8 @@
 
 </script>
 
-<div id="start-menu" class="absolute bottom-[30px] left-0 h-[500px] w-[390px] z-20 flex flex-col shadow-lg rounded-t-md hidden"
+<div id="start-menu" class="absolute bottom-[30px] left-0 h-[500px] w-[390px] z-20 flex flex-col shadow-lg rounded-t-md"
+    class:hidden={!$startMenuOpen}
     style:background-color="rgb(66, 130, 214)"
     use:click_outside on:click_outside={hide}>
     <div class="h-[3px] absolute top-0 left-[3px] right-[3px]" style="background: linear-gradient(to right, transparent 0px, rgba(255, 255, 255, 0.3) 1%, rgba(255, 255, 255, 0.5) 2%, rgba(255, 255, 255, 0.5) 95%, rgba(255, 255, 255, 0.3) 98%, rgba(255, 255, 255, 0.2) 99%, transparent 100%);

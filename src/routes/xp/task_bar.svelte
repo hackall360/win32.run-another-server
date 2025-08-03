@@ -1,17 +1,10 @@
 <script>
     import SystemTray from "./system_tray.svelte";
     import ProgramTray from "./program_tray.svelte";
+    import { startMenuOpen } from "../../lib/store";
 
     function start_menu(){
-        let el = document.querySelector('#start-menu');
-        let classList = el.classList;
-        
-        if(classList.contains('hidden')){
-            el.classList.remove('hidden');
-        } else {
-            el.classList.add('hidden');
-        }
-        console.log('toggle start menu');
+        startMenuOpen.set(!$startMenuOpen);
     }
 </script>
 
