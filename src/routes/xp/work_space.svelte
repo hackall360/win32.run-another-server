@@ -277,6 +277,39 @@
             runningPrograms.update(values => {
                 return [...values, program];
             })
+        } else if(path == './programs/network_status.svelte'){
+            const Program = (await import('./programs/network_status.svelte')).default;
+            let program = new Program({
+                target: node_ref,
+                props: {id: short.generate(), parentNode: node_ref, exec_path: path}
+            });
+            program.self = program;
+            //add to program tray
+            runningPrograms.update(values => {
+                return [...values, program];
+            })
+        } else if(path == './programs/safely_remove_hardware.svelte'){
+            const Program = (await import('./programs/safely_remove_hardware.svelte')).default;
+            let program = new Program({
+                target: node_ref,
+                props: {id: short.generate(), parentNode: node_ref, exec_path: path}
+            });
+            program.self = program;
+            //add to program tray
+            runningPrograms.update(values => {
+                return [...values, program];
+            })
+        } else if(path == './programs/windows_update.svelte'){
+            const Program = (await import('./programs/windows_update.svelte')).default;
+            let program = new Program({
+                target: node_ref,
+                props: {id: short.generate(), parentNode: node_ref, exec_path: path}
+            });
+            program.self = program;
+            //add to program tray
+            runningPrograms.update(values => {
+                return [...values, program];
+            })
         } else if(path == './programs/flash_player.svelte'){
             const Program = (await import('./programs/flash_player.svelte')).default;
             let program = new Program({
