@@ -19,3 +19,6 @@ export let queueCommand = writable(null);
 export let searchResults = writable([]);
 export let runHistory = writable([]);
 
+// Track visibility of the Start Menu
+export let startMenuOpen = writable(false);
+
