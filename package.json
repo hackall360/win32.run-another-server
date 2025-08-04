@@ -5,7 +5,8 @@
     "dev": "vite dev",
     "build": "vite build",
     "package": "svelte-kit package",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test": "node --test test/tooltip.test.js"
   },
   "devDependencies": {
     "@jhubbardsf/svelte-sortablejs": "^1.1.0",
