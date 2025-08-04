@@ -20,7 +20,8 @@
 
     let iframe;
     let address_bar;
-    let homepage = url ? url : 'https://app.usepanda.com/#/';
+    // Default to Google so searches and Home button mirror a classic setup
+    let homepage = url ? url : 'https://www.google.com';
     let history = [homepage];
     
     let page_index = 0;
@@ -39,26 +40,42 @@
     }
     async function load_page(){
         loading = true;
-        let url = address_bar.value;
-        if(url == null || url.trim() == '') return;
+        let input = address_bar.value;
+        if(input == null || input.trim() == '') return;
+
+        let url = input.trim();
 
         if(/^[A-Z]:\\/.test(url)){
-
-        } else if(!url.startsWith('https://') && !url.startsWith('http://')){
-            url = 'https://' + url;
-            if(!isURL(url)){
-                url = buildUrl('https://bing.com', {
-                    path: 'search',
-                    queryParams: {
-                        q: address_bar.value.trim()
-                    }
-                })
+            // local file path handled by to_real_url
+        } else if(!/^[a-zA-Z]+:\/\//.test(url)){
+            // try https then http before falling back to search
+            let httpsUrl = 'https://' + url;
+            if(isURL(httpsUrl)){
+                url = httpsUrl;
+            } else {
+                let httpUrl = 'http://' + url;
+                if(isURL(httpUrl)){
+                    url = httpUrl;
+                } else {
+                    url = buildUrl('https://www.google.com', {
+                        path: 'search',
+                        queryParams: {
+                            q: input.trim()
+                        }
+                    });
+                }
             }
-        } 
+        } else if(!isURL(url)){
+            url = buildUrl('https://www.google.com', {
+                path: 'search',
+                queryParams: {
+                    q: input.trim()
+                }
+            });
+        }
 
         history = [...history.slice(0, page_index+1), url, ...history.slice(page_index+1)];
         page_index++;
-        console.log(history);
         real_url = await to_real_url(history[page_index]);
     }
 
@@ -264,7 +281,7 @@
                 }}></RButton>
             <RButton icon="/images/xp/icons/IEHome.png"
                 on_click={() => {
-                    address_bar.value = 'https://app.usepanda.com/#/';
+                    address_bar.value = homepage;
                     load_page();
                 }}>
             </RButton>
