@@ -38,10 +38,12 @@ export function tooltip(element) {
 		comp.style.overflow = 'hidden';
 		comp.style.padding = '4px';
                 comp.style.fontFamily = 'Tahoma, MSSS';
-		comp.innerHTML = `
-			<p class=" line-clamp-1 leading-tight text-ellipsis" style="font-size:11px;">
-				${tooltip_message}
-			</p>`;
+
+                const p = document.createElement('p');
+                p.className = ' line-clamp-1 leading-tight text-ellipsis';
+                p.style.fontSize = '11px';
+                p.textContent = tooltip_message;
+                comp.appendChild(p);
 
 		timeout = setTimeout(() => {
 			document.body.appendChild(comp);
@@ -56,8 +58,9 @@ export function tooltip(element) {
 		clearTimeout(timeout);
 		if(comp != null){
 			comp.remove();
-		}
-	}
+        }
+}
+
 	
 	element.addEventListener('mouseenter', mouseEnter);
   	element.addEventListener('mouseleave', mouseLeave);
