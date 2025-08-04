@@ -57,12 +57,12 @@
         
         if(current_option == 0){
             utils.set_installing_windows(false);
-            dispatcher('load_page', {url: './xp/starting.svelte'});
+            dispatcher('load_page', {url: './xp/login.svelte'});
 
         } else if(current_option == 1){
             utils.set_installing_windows(true);
             dispatcher('load_page', {url: './installation/dos/starting.svelte'});
-        }   
+        }
     }
 
 
