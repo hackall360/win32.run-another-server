@@ -6,12 +6,7 @@
     let dispatcher = createEventDispatcher();
 
     let is_chromium = true;
-    onMount(async () => {
-        const $ = (await import('jquery')).default;
-        window.$ = window.jQuery = $;
-        await import('jquery-ui/dist/jquery-ui.js');
-        await import('jquery-ui/dist/themes/base/jquery-ui.css');
-
+    onMount(() => {
         utils.set_theme('none');
         is_chromium = window.chrome != null;
     })
@@ -29,26 +24,26 @@
     ];
 
     function on_key_pressed(e) {
-		 switch(e.keyCode) {
-			 case 38:
-				 if(current_option == 0){
+        switch (e.key) {
+            case 'ArrowUp':
+                if (current_option === 0) {
                     current_option = boot_options.length - 1;
-                 } else {
+                } else {
                     current_option = current_option - 1;
-                 }
-				 break;
-			 case 40:
-				 if(current_option == boot_options.length - 1){
+                }
+                break;
+            case 'ArrowDown':
+                if (current_option === boot_options.length - 1) {
                     current_option = 0;
-                 } else {
+                } else {
                     current_option = current_option + 1;
-                 }
-				 break;
-			 case 13:
-				 boot();
-				 break;
-		 }
-	}
+                }
+                break;
+            case 'Enter':
+                boot();
+                break;
+        }
+    }
 
     let selected = false;
     function boot(){
@@ -79,11 +74,13 @@
         <p class="text-slate-100 uppercase mt-4 mb-2">boot options:</p>
         {#each boot_options.slice(0, 4) as option, index }
             <div>
-                <div class="ml-8 p-2 inline-block {index == current_option ? 'text-slate-900 bg-slate-200' : 'text-slate-300'}"
+                <div
+                    class="ml-8 p-2 inline-block {index == current_option ? 'text-slate-900 bg-slate-200' : 'text-slate-300'}"
                     on:click={() => {
-                        //current_option = index;
-                        //boot();
-                    }}>
+                        current_option = index;
+                        boot();
+                    }}
+                >
                     {option}
                 </div>
             </div>
@@ -92,7 +89,12 @@
         <p class="text-slate-100 uppercase mt-4 mb-2">other options:</p>
         {#each boot_options.slice(4) as option, index }
             <div>
-                <div class="ml-8 p-2 inline-block {index+4 == current_option ? 'text-slate-900 bg-slate-200' : 'text-slate-300'}">
+                <div
+                    class="ml-8 p-2 inline-block {index+4 == current_option ? 'text-slate-900 bg-slate-200' : 'text-slate-300'}"
+                    on:click={() => {
+                        current_option = index + 4;
+                    }}
+                >
                     {option}
                 </div>
             </div>
