@@ -1,5 +1,6 @@
 import { writable } from "svelte/store";
 import { default_wallpapers } from './system';
+import { themes, applyTheme } from './themes';
 
 export let queueProgram = writable({});
 export let runningPrograms = writable([]);
@@ -21,4 +22,17 @@ export let runHistory = writable([]);
 
 // Track visibility of the Start Menu
 export let startMenuOpen = writable(false);
+
+// Theme selection
+export let theme = writable('lunaBlue');
+
+// Apply the initial theme
+applyTheme(themes['lunaBlue']);
+
+// Update CSS variables when the theme changes
+theme.subscribe(value => {
+    if (themes[value]) {
+        applyTheme(themes[value]);
+    }
+});
 

@@ -3,7 +3,8 @@
     import Button from '../../../lib/components/xp/Button.svelte';
     import Tab from '../../../lib/components/xp/Tab.svelte';
     import {onMount } from 'svelte';
-    import { runningPrograms, wallpaper, hardDrive } from '../../../lib/store';
+    import { runningPrograms, wallpaper, hardDrive, theme } from '../../../lib/store';
+    import { themes } from '../../../lib/themes';
     import {get, set} from 'idb-keyval';
     import _, { isEqual } from 'lodash';
     import { wallpapers_folder } from '../../../lib/system';
@@ -17,6 +18,8 @@
     let wallpapers = $hardDrive[wallpapers_folder]
     .children
     .filter(el => $hardDrive[el].type == 'file');
+
+    let selected = 'Desktop';
 
     onMount(() => {
     })
@@ -63,44 +66,55 @@
 <Window options={options} bind:this={window} on_click_close={destroy}>
     
     <div slot="content" class="absolute inset-1 p-2 pb-1 flex flex-col bg-xp-yellow overflow-hidden">
-        <Tab size={'sm'} items={['Themes', 'Desktop', 'Screesaver', 'Appearance', 'Settings']} 
-            selected={'Desktop'}>
+        <Tab size={'sm'} items={['Themes', 'Desktop', 'Screesaver', 'Appearance', 'Settings']}
+            bind:selected={selected}>
         </Tab>
         <div class="w-full grow bg-[#fafaf9]  shadow-sm -mt-[1px] flex flex-col overflow-hidden">
-            <div class="h-[250px] shrink-0 relative">
-                <div class="absolute top-8 left-1/2 -translate-x-1/2 w-[190px] h-[190px]">
-                    <div class="w-full h-full relative">
-                        {#await get_wallpaper_url(preview)}
-                            <div class="absolute bg-cover" 
-                                style="inset:10px 10px 30px 10px;">
-                            </div>
-                        {:then url} 
-                            <div class="absolute bg-cover" 
-                                style="inset:10px 10px 30px 10px;"
-                                style:background-image="url({url})">
-                            </div>
-                        {/await}
-                        <div class="absolute inset-0 bg-cover bg-[url(/images/xp/crt_monitor.png)]">
-
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="grow flex flex-row text-[13px] p-2 text-slate-800 overflow-hidden">
-                <div class="grow flex flex-col overflow-hidden">
-                    <span class="my-1">Background</span>
-                    <div class="grow p-1 overflow-y-scroll overflow-x-hidden border border-slate-700">
-                        {#each wallpapers as wallpaper}
-                        <div class="w-full flex flex-row" on:click={() => preview = wallpaper}>
-                            <img src="/images/xp/icons/JPG.png" class="w-[20px] h-[20px] shrink-0" alt="">
-                            <p class="leading-[20px] ml-1 px-1 grow-0 line-clamp-1 {_.isEqual(preview, wallpaper) ? 'bg-blue-600 text-slate-50' : ''}">
-                                {$hardDrive[wallpaper].basename}
-                            </p>
-                        </div>
+            {#if selected === 'Themes'}
+                <div class="p-4 text-[13px] text-slate-800">
+                    <label class="mb-2 block" for="theme-select">Theme</label>
+                    <select id="theme-select" class="border border-slate-700 w-full" bind:value={$theme}>
+                        {#each Object.entries(themes) as [key, t]}
+                            <option value={key}>{t.name}</option>
                         {/each}
+                    </select>
+                </div>
+            {:else}
+                <div class="h-[250px] shrink-0 relative">
+                    <div class="absolute top-8 left-1/2 -translate-x-1/2 w-[190px] h-[190px]">
+                        <div class="w-full h-full relative">
+                            {#await get_wallpaper_url(preview)}
+                                <div class="absolute bg-cover"
+                                    style="inset:10px 10px 30px 10px;">
+                                </div>
+                            {:then url}
+                                <div class="absolute bg-cover"
+                                    style="inset:10px 10px 30px 10px;"
+                                    style:background-image="url({url})">
+                                </div>
+                            {/await}
+                            <div class="absolute inset-0 bg-cover bg-[url(/images/xp/crt_monitor.png)]">
+
+                            </div>
+                        </div>
                     </div>
                 </div>
-            </div>
+                <div class="grow flex flex-row text-[13px] p-2 text-slate-800 overflow-hidden">
+                    <div class="grow flex flex-col overflow-hidden">
+                        <span class="my-1">Background</span>
+                        <div class="grow p-1 overflow-y-scroll overflow-x-hidden border border-slate-700">
+                            {#each wallpapers as wallpaper}
+                            <div class="w-full flex flex-row" on:click={() => preview = wallpaper}>
+                                <img src="/images/xp/icons/JPG.png" class="w-[20px] h-[20px] shrink-0" alt="">
+                                <p class="leading-[20px] ml-1 px-1 grow-0 line-clamp-1 {_.isEqual(preview, wallpaper) ? 'bg-blue-600 text-slate-50' : ''}">
+                                    {$hardDrive[wallpaper].basename}
+                                </p>
+                            </div>
+                            {/each}
+                        </div>
+                    </div>
+                </div>
+            {/if}
         </div>
         <div class="shrink-0 flex flex-row justify-end items-center px-1 pt-2">
             <Button title="OK" style="margin-right:10px;" on_click={apply}></Button>
