@@ -48,7 +48,7 @@ export let make = ({type, originator}) => {
                     name: 'Properties',
                     action: () => {
                         // queueProgram.set({
-                        //     path: './programs/properties.svelte',
+                        //     path: './programs/properties.jsx',
                         //     fs_item: originator.item
                         // })
                     }

@@ -159,7 +159,7 @@ let ie_program = {
   name: 'Microsoft Internet Explorer'
 }
 let winrar_program = {
-  path: './programs/winrar.svelte',
+  path: './programs/winrar.jsx',
   icon: '/images/xp/icons/RAR.png',
   name: 'WinRAR'
 }

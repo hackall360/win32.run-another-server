@@ -140,12 +140,12 @@ export let make = ({type, originator}) => {
                         let fs_item = hardDrive()[originator.id];
                         if(fs_item.type == 'drive' || fs_item.type == 'removable_storage'){
                             setQueueProgram({
-                                path: './programs/disk_properties.svelte',
+                                path: './programs/disk_properties.jsx',
                                 fs_item
                             })
                         } else {
                             setQueueProgram({
-                                path: './programs/properties.svelte',
+                                path: './programs/properties.jsx',
                                 fs_item
                             })
                         }

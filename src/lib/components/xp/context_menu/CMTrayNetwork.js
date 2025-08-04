@@ -13,7 +13,7 @@ export let make = ({type, originator}) => {
                         setQueueProgram({
                             name: 'Network Connections',
                             icon: '/images/xp/icons/ConnectionStatus.png',
-                            path: './programs/network_status.svelte'
+                            path: './programs/network_status.jsx'
                         })
                     }
                 }
