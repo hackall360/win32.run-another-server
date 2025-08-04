@@ -434,3 +434,13 @@ export async function buffer_from_url(url){
     console.log(array_buffer)
     return Buffer.from(array_buffer);
 }
+
+export async function webapp_info(url){
+    try{
+        let res = await fetch(`/api/webapp_info?url=${encodeURIComponent(url)}`);
+        if(!res.ok) return null;
+        return await res.json();
+    }catch(e){
+        return null;
+    }
+}
