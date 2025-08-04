@@ -119,7 +119,7 @@ let image_viewer = {
 }
 
 let paint_program = {
-  path: './programs/paint.svelte',
+  path: './programs/paint.jsx',
   icon: '/images/xp/icons/Paint.png',
   name: 'Paint'
 }
@@ -149,12 +149,12 @@ let koodo_program = {
   name: 'Koodo Reader'
 }
 let notepad_program = {
-  path: './programs/notepad.svelte',
+  path: './programs/notepad.jsx',
   icon: '/images/xp/icons/Notepad.png',
   name: 'Notepad'
 }
 let ie_program = {
-  path: './programs/internet_explorer.svelte',
+  path: './programs/internet_explorer.jsx',
   icon: '/images/xp/icons/InternetExplorer6.png',
   name: 'Microsoft Internet Explorer'
 }

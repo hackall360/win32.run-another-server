@@ -1,5 +1,4 @@
-import { queueProgram, clipboard, hardDrive } from '../../../store';
-import { get } from 'svelte/store';
+import { clipboard, setQueueProgram } from '../../../store';
 import { recycle_bin_id, protected_items, SortOptions, SortOrders } from '../../../system';
 import * as fs from '../../../fs';
 
@@ -71,7 +70,7 @@ export let make = ({type, originator}) => {
             [
                 {
                     name: 'Paste',
-                    disabled: get(clipboard).length == 0,
+                    disabled: clipboard().length == 0,
                     action: () => {
                         fs.paste(originator.id);
                     }
@@ -133,7 +132,7 @@ export let make = ({type, originator}) => {
                 {
                     name: 'Properties',
                     action: () => {
-                        queueProgram.set({
+                        setQueueProgram({
                             name: 'Display Properties',
                             icon: 'DisplayProperties.png',
                             path: './programs/display_properties.svelte'

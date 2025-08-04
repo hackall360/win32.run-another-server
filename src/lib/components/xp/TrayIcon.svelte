@@ -1,5 +1,5 @@
 <script>
-    import {tooltip} from './tooltip';
+    import { tooltip, setTooltip } from './tooltip';
     export let style = '';
     export let tooltip_message;
     export let icon;
@@ -18,11 +18,11 @@
         if(tooltip_message.length >= 20){
             position.top = position.top - 20;
         }
-        tooltip.set({message: tooltip_message, position});
+        setTooltip({message: tooltip_message, position});
     }
 
     function on_mouseleave(e){
-        tooltip.set(null);
+        setTooltip(null);
     }
 
 

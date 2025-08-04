@@ -1,5 +1,5 @@
 <script>
-    import { hardDrive, queueProgram, contextMenu } from '../../store';
+    import { hardDrive, setContextMenu, setQueueProgram } from '../../store';
     import { recycle_bin_id} from '../../system';
     export let style;
     export let classes;
@@ -9,15 +9,15 @@
 
     function on_dbclick(){
         let fs_item = $hardDrive[recycle_bin_id];
-        queueProgram.set({
-            path: './programs/my_computer.svelte',
+        setQueueProgram({
+            path: './programs/my_computer.jsx',
             fs_item: fs_item
         })
     }
 
     function on_rightclick(ev){
-        contextMenu.set(null);
-        contextMenu.set({x: ev.x, y: ev.y, type: 'RecycleBin', originator: null});
+        setContextMenu(null);
+        setContextMenu({x: ev.x, y: ev.y, type: 'RecycleBin', originator: null});
     }
 
 </script>

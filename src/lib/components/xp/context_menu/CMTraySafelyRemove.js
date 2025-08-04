@@ -1,4 +1,4 @@
-import { queueProgram } from '../../../store';
+import { setQueueProgram } from '../../../store';
 
 export let make = ({type, originator}) => {
     return {
@@ -10,7 +10,7 @@ export let make = ({type, originator}) => {
                     name: 'Safely Remove Hardware',
                     font: 'bold',
                     action: () => {
-                        queueProgram.set({
+                        setQueueProgram({
                             name: 'Safely Remove Hardware',
                             icon: '/images/xp/icons/SafelyRemoveHardware.png',
                             path: './programs/safely_remove_hardware.svelte'

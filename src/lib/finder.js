@@ -1,21 +1,20 @@
 import { hardDrive } from './store';
-import { my_computer} from './system';
-import { get } from 'svelte/store';
+import { my_computer } from './system';
 
-let computer = my_computer.map(el => get(hardDrive)[el]);
+let computer = my_computer.map(el => hardDrive()[el]);
 let drives = computer.filter(item => item.type == 'drive' || item.type == 'removable_storage');
- 
+
 export function to_url(id){
-    if(id == null || get(hardDrive)[id] == null) return null;
+    if(id == null || hardDrive()[id] == null) return null;
     let url = '';
-    let current_location = get(hardDrive)[id];
+    let current_location = hardDrive()[id];
     url = current_location.name + '\\' + url;
 
     if(current_location.parent == null) return url;
     
     do {
         
-        current_location = get(hardDrive)[current_location.parent];
+        current_location = hardDrive()[current_location.parent];
         url = current_location.name + '\\' + url;
 
         console.log(current_location);
@@ -38,14 +37,14 @@ export function to_id_nocase(url){
     if(drive == null) return null;
     if(path_components.length == 1) return drive.id;
 
-    drive = get(hardDrive)[drive.id];
+    drive = hardDrive()[drive.id];
 
     let current_location = drive;
     for(let i = 1; i < path_components.length; i++){
         console.log(i);
         console.log(path_components[i]);
         current_location = [
-            ...current_location.children.map(id => get(hardDrive)[id])
+            ...current_location.children.map(id => hardDrive()[id])
         ]
         .find(item => item?.name?.toLowerCase() == path_components[i].toLowerCase());
         console.log(current_location);
@@ -68,14 +67,14 @@ export function to_id(url){
     if(drive == null) return null;
     if(path_components.length == 1) return drive.id;
 
-    drive = get(hardDrive)[drive.id];
+    drive = hardDrive()[drive.id];
 
     let current_location = drive;
     for(let i = 1; i < path_components.length; i++){
         console.log(i);
         console.log(path_components[i]);
         current_location = [
-            ...current_location.children.map(id => get(hardDrive)[id])
+            ...current_location.children.map(id => hardDrive()[id])
         ]
         .find(item => item?.name == path_components[i]);
         console.log(current_location);
