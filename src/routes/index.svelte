@@ -60,6 +60,10 @@
         page = (await import('./xp/desktop.svelte')).default;
 
     }
+    else if(url == './xp/login.svelte'){
+        page = (await import('./xp/login.svelte')).default;
+
+    }
     else if(url == './xp/program_tray.svelte'){
         page = (await import('./xp/program_tray.svelte')).default;
 
