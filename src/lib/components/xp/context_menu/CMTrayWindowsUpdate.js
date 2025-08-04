@@ -1,4 +1,4 @@
-import { queueProgram } from '../../../store';
+import { setQueueProgram } from '../../../store';
 
 export let make = ({type, originator}) => {
     return {
@@ -10,7 +10,7 @@ export let make = ({type, originator}) => {
                     name: 'Open Windows Update',
                     font: 'bold',
                     action: () => {
-                        queueProgram.set({
+                        setQueueProgram({
                             name: 'Windows Update',
                             icon: '/images/xp/icons/WindowsUpdate.png',
                             path: './programs/windows_update.svelte'

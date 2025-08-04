@@ -1,6 +1,5 @@
-import { queueProgram, clipboard, hardDrive } from '../../../store';
+import { clipboard, hardDrive, setQueueProgram, setHardDrive } from '../../../store';
 import { recycle_bin_id, SortOptions, SortOrders} from '../../../system';
-import { get } from 'svelte/store';
 import * as fs from '../../../fs';
 
 export let make = ({type, originator}) => {
@@ -28,12 +27,12 @@ export let make = ({type, originator}) => {
                         ...sort_menu_items.map(item => {
                             return {
                                 ...item,
-                                check: item.value == get(hardDrive)[originator.id].sort_option,
+                                check: item.value == hardDrive()[originator.id].sort_option,
                                 action: () => {
-                                    hardDrive.update(data => {
+                                    setHardDrive(data => {
                                         data[originator.id].sort_option = item.value;
                                         return data;
-                                    })
+                                    });
                                 }
                             }
                         }),
@@ -41,12 +40,12 @@ export let make = ({type, originator}) => {
                         ...sort_order_menu_items.map(item => {
                             return {
                                 ...item,
-                                check: item.value == get(hardDrive)[originator.id].sort_order,
+                                check: item.value == hardDrive()[originator.id].sort_order,
                                 action: () => {
-                                    hardDrive.update(data => {
+                                    setHardDrive(data => {
                                         data[originator.id].sort_order = item.value;
                                         return data;
-                                    })
+                                    });
                                 }
                             }
                         }),
@@ -73,7 +72,7 @@ export let make = ({type, originator}) => {
                 ...originator.id != recycle_bin_id ? [
                     {
                         name: 'Paste',
-                        disabled: get(clipboard).length == 0,
+                        disabled: clipboard().length == 0,
                         action: () => {
                             fs.paste(originator.id);
                         }
@@ -138,14 +137,14 @@ export let make = ({type, originator}) => {
                 {
                     name: 'Properties',
                     action: () => {
-                        let fs_item = get(hardDrive)[originator.id];
+                        let fs_item = hardDrive()[originator.id];
                         if(fs_item.type == 'drive' || fs_item.type == 'removable_storage'){
-                            queueProgram.set({
+                            setQueueProgram({
                                 path: './programs/disk_properties.svelte',
                                 fs_item
                             })
                         } else {
-                            queueProgram.set({
+                            setQueueProgram({
                                 path: './programs/properties.svelte',
                                 fs_item
                             })

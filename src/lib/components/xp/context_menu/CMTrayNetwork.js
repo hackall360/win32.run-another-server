@@ -1,4 +1,4 @@
-import { queueProgram } from '../../../store';
+import { setQueueProgram } from '../../../store';
 
 export let make = ({type, originator}) => {
     return {
@@ -10,7 +10,7 @@ export let make = ({type, originator}) => {
                     name: 'Open Network Connections',
                     font: 'bold',
                     action: () => {
-                        queueProgram.set({
+                        setQueueProgram({
                             name: 'Network Connections',
                             icon: '/images/xp/icons/ConnectionStatus.png',
                             path: './programs/network_status.svelte'

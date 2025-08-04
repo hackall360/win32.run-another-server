@@ -1,17 +1,26 @@
-import { queueProgram, clipboard, selectingItems, hardDrive, clipboard_op } from './store';
+import {
+  queueProgram,
+  setQueueProgram,
+  clipboard,
+  setClipboard,
+  selectingItems,
+  hardDrive,
+  setHardDrive,
+  clipboardOp,
+  setClipboardOp
+} from './store';
 import { recycle_bin_id, protected_items, SortOptions, SortOrders } from './system';
 import * as utils from './utils';
-import { get } from 'svelte/store';
 import short from 'short-uuid';
 import * as util from './utils';
 import * as idb from 'idb-keyval';
 import * as finder from './finder';
-import {Buffer} from 'buffer';
+import { Buffer } from 'buffer';
 
 export function search_fs(query){
     if(utils.is_empty(query)) return [];
     query = query.toLowerCase();
-    let data = get(hardDrive);
+    let data = hardDrive();
     return Object.values(data).filter(item => item?.name?.toLowerCase().includes(query));
 }
 
@@ -19,59 +28,59 @@ export function run_command(command){
     if(utils.is_empty(command)) return;
     let id = finder.to_id(command) || finder.to_id_nocase(command);
     if(id){
-        queueProgram.set({path: './programs/my_computer.svelte', fs_item: {id}});
+        setQueueProgram({path: './programs/my_computer.jsx', fs_item: {id}});
         return;
     }
     if(/^https?:\/\//i.test(command)){
-        queueProgram.set({path: './programs/internet_explorer.svelte', fs_item: {url: command}});
+        setQueueProgram({path: './programs/internet_explorer.jsx', fs_item: {url: command}});
         return;
     }
     let apps = {
-        'notepad': './programs/notepad.svelte',
-        'mspaint': './programs/paint.svelte',
-        'control panel': './programs/control_panel.svelte'
+        'notepad': './programs/notepad.jsx',
+        'mspaint': './programs/paint.jsx',
+        'control panel': './programs/control_panel.jsx'
     };
     let lower = command.toLowerCase();
     if(apps[lower]){
-        queueProgram.set({path: apps[lower]});
+        setQueueProgram({path: apps[lower]});
     }
 }
 
 export function copy(){
-    clipboard_op.set('copy');
-    clipboard.set(get(selectingItems));
+    setClipboardOp('copy');
+    setClipboard(selectingItems());
     console.log('copy');
 }
 
 export function cut(){
-    clipboard_op.set('cut');
-    clipboard.set(get(selectingItems));
+    setClipboardOp('cut');
+    setClipboard(selectingItems());
     console.log('cut');
 }
 
 export function paste(id, new_id=null){
     console.log('paste to', id);
-    console.log('clipboard_op', get(clipboard_op));
-    console.log(get(hardDrive)[id]);
-    if(get(hardDrive)[id] == null || get(hardDrive)[id].type == 'file'){
+    console.log('clipboard_op', clipboardOp());
+    console.log(hardDrive()[id]);
+    if(hardDrive()[id] == null || hardDrive()[id].type == 'file'){
         console.log('target is not a dir');
         return;
     }
 
-    if(get(clipboard).length == 0){
+    if(clipboard().length == 0){
         console.log('clipboard is empty');
         return;
     }
 
-    for(let fs_id of get(clipboard)){
+    for(let fs_id of clipboard()){
         clone_fs(fs_id, id, new_id);
 
-        if(get(clipboard_op) == 'cut'){
+        if(clipboardOp() == 'cut'){
             del_fs(fs_id);
         }
     }
 
-    clipboard_op.set('copy')
+    setClipboardOp('copy');
     // clipboard.set([]);
 }
 
@@ -80,25 +89,24 @@ export function del_fs(id){
         console.log(id, 'is protected');
         return;
     }
-    let obj = get(hardDrive)[id];
+    let obj = hardDrive()[id];
 
     let child_ids = [
         ...obj.children
     ]
-    if(get(hardDrive)[obj.parent] != null){
+    if(hardDrive()[obj.parent] != null){
         console.log('delete from parent', obj.parent)
-        
-        hardDrive.update(data => {
+        setHardDrive(data => {
             data[obj.parent].children = data[obj.parent].children.filter(el => el != obj.id);
             data[obj.parent].date_modified = (new Date()).getTime();
             return data;
-        })
+        });
     }
-    
-    hardDrive.update(data => {
+
+    setHardDrive(data => {
         delete data[id];
         return data;
-    })
+    });
 
     for(let child_id of child_ids){
         del_fs(child_id);
@@ -107,13 +115,13 @@ export function del_fs(id){
 
 function dir_contains_dir(a, b){
     if(a == null || b == null) return false;
-    if(get(hardDrive)[a] == null) return false;
-    if(get(hardDrive)[b] == null) return false;
+    if(hardDrive()[a] == null) return false;
+    if(hardDrive()[b] == null) return false;
     if(a == b) return true;
     
     let paths = [];
-    while(get(hardDrive)[b].parent != null){
-        let parent = get(hardDrive)[b].parent;
+    while(hardDrive()[b].parent != null){
+        let parent = hardDrive()[b].parent;
         paths.push(parent);
         b = parent;
     }
@@ -126,7 +134,7 @@ export function clone_fs(obj_current_id, parent_id, new_id=null){
         return;
     }
 
-    let obj = {...get(hardDrive)[obj_current_id]};
+    let obj = {...hardDrive()[obj_current_id]};
 
     if(new_id == null){
         obj.id = short.generate();
@@ -137,7 +145,7 @@ export function clone_fs(obj_current_id, parent_id, new_id=null){
     obj.parent = parent_id;
 
     let parent_items_names = [
-        ...get(hardDrive)[parent_id].children.map(el => get(hardDrive)[el].name),
+        ...hardDrive()[parent_id].children.map(el => hardDrive()[el].name),
     ]
     let appendix = 2;
     let basename = obj.basename;
@@ -154,17 +162,17 @@ export function clone_fs(obj_current_id, parent_id, new_id=null){
     obj.children = [];
 
     //save to hard drive
-    hardDrive.update(data => {
+    setHardDrive(data => {
         data[obj.id] = obj;
         return data;
-    })
+    });
     console.log('cloning', obj.id)
 
-    hardDrive.update(data => {
+    setHardDrive(data => {
         data[parent_id].children.push(obj.id);
         data[parent_id].date_modified = (new Date()).getTime();
         return data;
-    })
+    });
 
     //recursively clone child items
     for(let child of [...children]){
@@ -198,7 +206,7 @@ export async function new_fs_item(type, ext, seedname, parent_id, file=null){
         sort_order: SortOrders.ASCENDING
     }
 
-    let children = get(hardDrive)[parent_id].children.map(el => get(hardDrive)[el]);
+    let children = hardDrive()[parent_id].children.map(el => hardDrive()[el]);
 
     let parent_items_names = [
         ...children.map(el => el.name)
@@ -229,15 +237,15 @@ export async function new_fs_item(type, ext, seedname, parent_id, file=null){
     }
     
 
-    hardDrive.update(data => {
+    setHardDrive(data => {
         data[item.id] = item;
         return data;
-    })
-    hardDrive.update(data => {
+    });
+    setHardDrive(data => {
         data[parent_id].children.push(item.id);
         data[parent_id].date_modified = now;
         return data;
-    })
+    });
 
     return item.id;
 }
@@ -270,7 +278,7 @@ export async function new_fs_item_raw(item, parent_id){
     item.sort_option = SortOptions.NONE,
     item.sort_order = SortOrders.ASCENDING
     
-    let children = get(hardDrive)[parent_id].children.map(el => get(hardDrive)[el]);
+    let children = hardDrive()[parent_id].children.map(el => hardDrive()[el]);
 
     let parent_items_names = [
         ...children.map(el => el.name)
@@ -292,19 +300,19 @@ export async function new_fs_item_raw(item, parent_id){
         item.size = Math.ceil(file.size/1024);
         delete item.file;
     } else if(item.executable){
-        item.url = './programs/webapp.svelte';
+        item.url = './programs/webapp.jsx';
     }
     
 
-    hardDrive.update(data => {
+    setHardDrive(data => {
         data[item.id] = item;
         return data;
-    })
-    hardDrive.update(data => {
+    });
+    setHardDrive(data => {
         data[parent_id].children.push(item.id);
         data[parent_id].date_modified = now;
         return data;
-    })
+    });
 
     return item.id;
 }
@@ -314,22 +322,22 @@ export function get_path(id){
 }
 
 export async function save_file(fs_id, file){
-    if(get(hardDrive)[fs_id] == null){
+    if(hardDrive()[fs_id] == null){
         console.log(fs_id, 'not exist');
         return;
     }
     let url = short.generate();
     await idb.set(url, file);
 
-    let parent_id = get(hardDrive)[fs_id].parent;
+    let parent_id = hardDrive()[fs_id].parent;
     let now = (new Date()).getTime();
-    hardDrive.update(data => {
+    setHardDrive(data => {
         data[fs_id].url = url;
         data[fs_id].storage_type = 'local';
         data[fs_id].date_modified = now;
         data[parent_id].date_modified = now;
         return data;
-    })
+    });
 }
 
 export async function save_file_as(basename, ext, file, parent_id, new_id=null){
@@ -366,7 +374,7 @@ export async function save_file_as(basename, ext, file, parent_id, new_id=null){
     }
 
     let parent_items_names = [
-        ...get(hardDrive)[parent_id].children.map(el => get(hardDrive)[el].name)
+        ...hardDrive()[parent_id].children.map(el => hardDrive()[el].name)
     ]
     let appendix = 2;
     basename = obj.basename;
@@ -378,16 +386,16 @@ export async function save_file_as(basename, ext, file, parent_id, new_id=null){
     obj.name = basename + obj.ext;
 
 
-    hardDrive.update(data => {
+    setHardDrive(data => {
         data[obj.id] = obj;
         data[parent_id].children.push(obj.id);
         data[parent_id].date_modified = now;
         return data;
-    })
+    });
 }
 
 export async function get_file(id){
-    let fs_item = get(hardDrive)[id];
+    let fs_item = hardDrive()[id];
     let file;
     if(fs_item.storage_type == 'remote'){
         file = await file_from_url(fs_item.url);
@@ -400,7 +408,7 @@ export async function get_file(id){
 }
 
 export async function get_url(id){
-    let fs_item = get(hardDrive)[id];
+    let fs_item = hardDrive()[id];
 
     if(fs_item.storage_type == 'remote'){
         return fs_item.url;

@@ -1,6 +1,5 @@
-import { queueProgram, clipboard, selectingItems, hardDrive, clipboard_op } from '../../../store';
-import { recycle_bin_id, protected_items } from '../../../system';
-import { get } from 'svelte/store';
+import { hardDrive, setQueueProgram } from '../../../store';
+import { recycle_bin_id } from '../../../system';
 import * as fs from '../../../fs';
 export let make = ({type, originator}) => {
     //originator: a wrapped fs item, i.e, file, folder, drive
@@ -15,11 +14,11 @@ export let make = ({type, originator}) => {
                 {
                     name: 'Open',
                     action: () => {
-                        let fs_item = get(hardDrive)[recycle_bin_id];
-                        queueProgram.set({
-                            path: './programs/my_computer.svelte',
+                        let fs_item = hardDrive()[recycle_bin_id];
+                        setQueueProgram({
+                            path: './programs/my_computer.jsx',
                             fs_item: fs_item
-                        })
+                        });
                     },
                     font: 'bold',
                 }
@@ -29,7 +28,7 @@ export let make = ({type, originator}) => {
                     name: 'Empty Recycle Bin', 
                     action: () => {
                         let yes_action = () => {
-                            let children = get(hardDrive)[recycle_bin_id].children;
+                            let children = hardDrive()[recycle_bin_id].children;
                             for(let id of [...children]){
                                 fs.del_fs(id);
                             }

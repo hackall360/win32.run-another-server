@@ -1,14 +1,14 @@
 <script>
-    import { zIndex, runningPrograms, contextMenu } from '../../store';
+    import { zIndex, runningPrograms, setContextMenu } from '../../store';
     let node_ref;
 
     export let program;
 
     function on_rightclick(ev){
-        contextMenu.set(null);
+        setContextMenu(null);
         console.log(program);
         console.log({maximized: program.window.maximized, minimized: program.window.minimized})
-        contextMenu.set({x: ev.x, y: ev.y, type: 'ProgramTile', originator: program});
+        setContextMenu({x: ev.x, y: ev.y, type: 'ProgramTile', originator: program});
     }
 
     function on_mousedown(ev){

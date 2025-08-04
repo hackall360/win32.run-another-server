@@ -4,7 +4,7 @@
     let required_height = 0;
 
     import { click_outside } from '../../utils';
-    import { contextMenu } from '../../store';
+    import { contextMenu, setContextMenu } from '../../store';
     import { onDestroy } from 'svelte';
     import { filter } from 'lodash';
 
@@ -71,7 +71,7 @@
 
     export let hide = () => {
         visible = false;
-        contextMenu.set(null);
+        setContextMenu(null);
     }
 
 </script>

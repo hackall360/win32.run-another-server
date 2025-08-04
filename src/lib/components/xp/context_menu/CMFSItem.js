@@ -1,7 +1,6 @@
-import { queueProgram, clipboard, selectingItems, hardDrive, clipboard_op, wallpaper } from '../../../store';
+import { clipboard, selectingItems, setSelectingItems, setQueueProgram, setWallpaper } from '../../../store';
 import { recycle_bin_id, protected_items, wallpapers_folder, supported_wallpaper_filetypes, doctypes, archive_exts } from '../../../system';
 import * as utils from '../../../utils';
-import { get } from 'svelte/store';
 import * as fs from '../../../fs';
 import short from 'short-uuid';
 import FileSaver from 'file-saver';
@@ -36,7 +35,7 @@ export let make = ({type, originator}) => {
                         return {
                             name: el.name,
                             icon: el.icon,
-                            action: () => queueProgram.set({
+                            action: () => setQueueProgram({
                                 path: el.path,
                                 fs_item: originator.item
                             })
@@ -49,7 +48,7 @@ export let make = ({type, originator}) => {
                         action: () => {
                             let new_id = short.generate();
                             fs.clone_fs(originator.item.id, wallpapers_folder, new_id);
-                            wallpaper.set(new_id);
+                            setWallpaper(new_id);
                         }
                     }
                 ] : []
@@ -60,7 +59,7 @@ export let make = ({type, originator}) => {
                         name: 'Extract here...',
                         icon: '/images/xp/icons/RAR.png',
                         action: () => {
-                            queueProgram.set({
+                            setQueueProgram({
                                 path: './programs/winrar.svelte',
                                 fs_item: originator.item
                             })
@@ -72,7 +71,7 @@ export let make = ({type, originator}) => {
                         name: 'Add to archive...',
                         icon: '/images/xp/icons/RAR.png',
                         action: () => {
-                            queueProgram.set({
+                            setQueueProgram({
                                 path: './programs/zip.svelte',
                                 fs_item: originator.item
                             })
@@ -101,7 +100,7 @@ export let make = ({type, originator}) => {
                                 name: 'Compressed (Zipped) Folder',
                                 icon: '/images/xp/icons/Zipfolder.png',
                                 action: () => {
-                                    queueProgram.set({
+                                    setQueueProgram({
                                         path: './programs/zip.svelte',
                                         fs_item: originator.item
                                     })
@@ -127,7 +126,7 @@ export let make = ({type, originator}) => {
                 ...protected_items.includes(originator.item.id) ? [] : [
                     {
                         name: 'Cut',
-                        disabled: get(selectingItems).length == 0,
+                        disabled: selectingItems().length == 0,
                         action: () => {
                             fs.cut();
                         }
@@ -136,7 +135,7 @@ export let make = ({type, originator}) => {
                 ...originator.item.type == 'drive' || originator.item.type == 'removable_storage' ? [] : [
                     {
                         name: 'Copy',
-                        disabled: get(selectingItems).length == 0,
+                        disabled: selectingItems().length == 0,
                         action: () => {
                             fs.copy();
                         }
@@ -144,7 +143,7 @@ export let make = ({type, originator}) => {
                 ],
                 ... originator.item.type != 'file' && originator.item.parent != recycle_bin_id ? [{
                     name: 'Paste',
-                    disabled: get(clipboard).length == 0,
+                    disabled: clipboard().length == 0,
                     action: () => {
                         fs.paste(originator.item.id);
                     }
@@ -153,9 +152,9 @@ export let make = ({type, originator}) => {
             [
                 ...protected_items.includes(originator.item.id) ? [] : [
                     {
-                        name: 'Delete', 
+                        name: 'Delete',
                         action: () => {
-                            let items = [...get(selectingItems)];
+                            let items = [...selectingItems()];
                             console.log(items)
 
                             let yes_action = () => {
@@ -205,7 +204,7 @@ export let make = ({type, originator}) => {
                     {
                         name: 'Rename',
                         action: () => {
-                            selectingItems.set([originator.item.id]);
+                            setSelectingItems([originator.item.id]);
                             originator.rename();
                         }
                     }
@@ -216,17 +215,17 @@ export let make = ({type, originator}) => {
                     name: 'Properties',
                     action: () => {
                         if(originator.item.type == 'drive' || originator.item.type == 'removable_storage'){
-                            queueProgram.set({
+                            setQueueProgram({
                                 path: './programs/disk_properties.svelte',
                                 fs_item: originator.item
                             })
                         } else {
-                            queueProgram.set({
+                            setQueueProgram({
                                 path: './programs/properties.svelte',
                                 fs_item: originator.item
                             })
                         }
-                        
+
                     }
                 }
             ]
