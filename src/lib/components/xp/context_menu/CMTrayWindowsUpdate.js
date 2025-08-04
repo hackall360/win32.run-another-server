@@ -13,7 +13,7 @@ export let make = ({type, originator}) => {
                         setQueueProgram({
                             name: 'Windows Update',
                             icon: '/images/xp/icons/WindowsUpdate.png',
-                            path: './programs/windows_update.svelte'
+                            path: './programs/windows_update.jsx'
                         })
                     }
                 }

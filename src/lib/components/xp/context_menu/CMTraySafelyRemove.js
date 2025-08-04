@@ -13,7 +13,7 @@ export let make = ({type, originator}) => {
                         setQueueProgram({
                             name: 'Safely Remove Hardware',
                             icon: '/images/xp/icons/SafelyRemoveHardware.png',
-                            path: './programs/safely_remove_hardware.svelte'
+                            path: './programs/safely_remove_hardware.jsx'
                         })
                     }
                 }
