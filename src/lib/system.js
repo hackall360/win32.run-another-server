@@ -104,7 +104,7 @@ export let desktop_folder = 'nt1QdU9Sws26H26UNQZcQU';
 
 export let wallpapers_folder = 'uZ7fBbvbzFvQgAmJZpVbEb';
 
-export let bliss_wallpaper= 'w38WCkdn67K6JsvjdGug6y';
+export let bliss_wallpaper = '/images/xp/Bliss.jpg';
 
 export let protected_items = [...my_computer, recycle_bin_id, desktop_folder, wallpapers_folder];
 

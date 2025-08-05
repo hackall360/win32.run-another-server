@@ -1,5 +1,4 @@
 import { createSignal, createEffect } from "solid-js";
-import { default_wallpapers } from "./system.js";
 import { themes, applyTheme } from "./themes.js";
 import { set, get } from "idb-keyval";
 
@@ -52,6 +51,15 @@ createEffect(() => {
 // Persist users and current user when they change
 createEffect(() => persist("users", users()));
 createEffect(() => persist("current_user", currentUser()));
+createEffect(() => persist("wallpaper", wallpaper()));
+
+// Apply wallpaper to page background
+createEffect(() => {
+  const wp = wallpaper();
+  if (typeof document !== "undefined") {
+    document.body.style.backgroundImage = wp ? `url(${wp})` : "";
+  }
+});
 
 // Load user profiles from IndexedDB
 export async function loadUsers() {
