@@ -14,6 +14,11 @@ export default function ControlPanel() {
       path: "./programs/network_status.jsx"
     },
     {
+      name: "System",
+      icon: "/images/xp/icons/SystemProperties.png",
+      path: "./programs/system_properties.jsx"
+    },
+    {
       name: "Windows Update",
       icon: "/images/xp/icons/WindowsUpdate.png",
       path: "./programs/windows_update.jsx"
