@@ -6,7 +6,7 @@
     "dev": "solid-start dev",
     "build": "solid-start build",
     "start": "solid-start start",
-    "test": "node --test test/store.test.js"
+    "test": "node --test test/*.test.js"
   },
   "devDependencies": {
     "@tailwindcss/line-clamp": "^0.4.4",

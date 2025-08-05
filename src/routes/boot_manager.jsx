@@ -42,7 +42,7 @@ export default function BootManager() {
       navigate("/xp/login");
     } else if (currentOption() === 1) {
       utils.set_installing_windows(true);
-      navigate("/installation/dos/starting");
+      navigate("/installation");
     } else if (currentOption() === 4) {
       navigate("/hardware_manager");
     }
@@ -51,6 +51,11 @@ export default function BootManager() {
   onMount(() => {
     utils.set_theme("none");
     setIsChromium(window.chrome != null);
+    if (!utils.is_windows_installed()) {
+      utils.set_installing_windows(true);
+      navigate("/installation");
+      return;
+    }
     window.addEventListener("keydown", onKeyPressed);
   });
 
