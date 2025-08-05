@@ -1,4 +1,4 @@
-import mime_db from './mime.json';
+import mime_db from './mime.json' assert { type: 'json' };
 
 export function compile_params(new_params){
     
@@ -115,6 +115,16 @@ export function is_installing_windows(){
 export function set_installing_windows(value){
   value = parse_bool(value);
   localStorage.setItem('is_installing_windows', value);
+}
+
+export function is_windows_installed(){
+  let value = localStorage.getItem('windows_installed');
+  return parse_bool(value);
+}
+
+export function set_windows_installed(value){
+  value = parse_bool(value);
+  localStorage.setItem('windows_installed', value);
 }
 
 export function get_hardware_settings() {
