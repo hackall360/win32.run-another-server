@@ -1,6 +1,7 @@
 {
   "name": "web-solid",
   "version": "0.0.1",
+  "license": "Unlicense",
   "scripts": {
     "dev": "solid-start dev",
     "build": "solid-start build",
