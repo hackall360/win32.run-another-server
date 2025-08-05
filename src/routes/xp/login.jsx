@@ -13,7 +13,8 @@ import {
   currentUser,
   setCurrentUser,
   loadUsers,
-  loadTheme
+  loadTheme,
+  loadScreensaver
 } from "../../lib/store";
 import { bliss_wallpaper, SortOptions, SortOrders } from "../../lib/system";
 import { useNavigate } from "@solidjs/router";
@@ -30,6 +31,7 @@ export default function Login() {
     setProfiles(users());
     await loadHardDrive();
     await loadWallpaper();
+    await loadScreensaver();
     preloadIframes();
     preloadContextMenus();
   });
