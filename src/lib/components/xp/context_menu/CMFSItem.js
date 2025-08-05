@@ -235,7 +235,7 @@ export let make = ({type, originator}) => {
 
 
 async function confirm_delete({node_ref, title, message, icon, yes_action, no_action}){
-    const Dialog = (await import('../Dialog.svelte')).default;
+    const Dialog = (await import('../Dialog.jsx')).default;
         let buttons = [
             {
                 name: 'OK',

@@ -17,12 +17,11 @@ async function walk(dir) {
 const sourceFiles = [
   ...(await walk('./src')),
   'static/json/hard_drive.json',
-  'svelte.config.js',
   'tailwind.config.cjs',
   'vite.config.js'
 ]
   .filter((file) =>
-    ['.js', '.jsx', '.json', '.svelte', '.css', '.cjs', '.html'].includes(
+    ['.js', '.jsx', '.json', '.css', '.cjs', '.html'].includes(
       path.extname(file)
     )
   )
