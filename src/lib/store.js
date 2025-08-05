@@ -46,6 +46,7 @@ createEffect(() => {
   if (themes[value]) {
     applyTheme(themes[value]);
   }
+  persist("theme", value);
 });
 
 // Persist users and current user when they change
@@ -74,5 +75,14 @@ export async function loadUsers() {
   const current = await get("current_user");
   if (current) {
     setCurrentUser(current);
+  }
+}
+
+// Load selected theme from IndexedDB
+export async function loadTheme() {
+  if (typeof indexedDB === "undefined") return;
+  const stored = await get("theme");
+  if (stored && themes[stored]) {
+    setTheme(stored);
   }
 }

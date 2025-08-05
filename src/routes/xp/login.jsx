@@ -12,7 +12,8 @@ import {
   setUsers,
   currentUser,
   setCurrentUser,
-  loadUsers
+  loadUsers,
+  loadTheme
 } from "../../lib/store";
 import { bliss_wallpaper, SortOptions, SortOrders } from "../../lib/system";
 import { useNavigate } from "@solidjs/router";
@@ -24,6 +25,7 @@ export default function Login() {
   const [password, setPassword] = createSignal("");
 
   onMount(async () => {
+    await loadTheme();
     await loadUsers();
     setProfiles(users());
     await loadHardDrive();
