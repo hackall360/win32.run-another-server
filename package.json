@@ -9,15 +9,15 @@
     "test": "node --test test/store.test.js"
   },
   "devDependencies": {
+    "@tailwindcss/line-clamp": "^0.4.4",
+    "@types/lodash": "^4.17.20",
     "autoprefixer": "^10.4.21",
     "postcss": "^8.5.6",
     "postcss-load-config": "^4.0.2",
-    "tailwindcss": "^3.4.17",
-    "vite": "^4.4.9",
-    "@tailwindcss/line-clamp": "^0.4.4",
-    "@types/lodash": "^4.17.20",
     "solid-start": "^0.3.2",
     "solid-start-node": "^0.3.2",
+    "tailwindcss": "^3.4.17",
+    "vite": "^4.4.9",
     "vite-plugin-solid": "^2.9.1"
   },
   "type": "module",
@@ -38,12 +38,11 @@
     "jszip": "^3.10.1",
     "link-preview-js": "^3.1.0",
     "lodash": "^4.17.21",
-    "node-dir": "^0.1.17",
     "short-uuid": "^4.2.2",
-    "srt-webvtt": "^2.0.0",
-    "tailwindcss-scoped-groups": "^2.0.0",
-    "solid-js": "^1.8.17",
+    "solid-bootstrap": "^1.0.4",
     "solid-headless": "^0.13.1",
-    "solid-bootstrap": "^1.0.4"
+    "solid-js": "^1.8.17",
+    "srt-webvtt": "^2.0.0",
+    "tailwindcss-scoped-groups": "^2.0.0"
   }
 }
