@@ -113,7 +113,7 @@ export let hidden_items = [recycle_bin_id,desktop_folder, wallpapers_folder];
 export let supported_wallpaper_filetypes = ['.jpg', '.jpeg', '.png', '.webp'];
 
 let image_viewer = {
-  path: './programs/image_viewer.svelte',
+  path: './programs/image_viewer.jsx',
   icon: '/images/xp/icons/WindowsPictureandFaxViewer.png',
   name: 'Image Viewer'
 }
@@ -124,27 +124,27 @@ let paint_program = {
   name: 'Paint'
 }
 let photon_program = {
-  path: './programs/photon.svelte',
+  path: './programs/photon.jsx',
   icon: '/images/xp/icons/Photon.png',
   name: 'Photon Editor'
 }
 let mpc_program = {
-  path: './programs/media_player_classic.svelte',
+  path: './programs/media_player_classic.jsx',
   icon: '/images/xp/icons/MPC.png',
   name: 'Media Player Classic'
 }
 let foxit_reader_program = {
-  path: './programs/foxit_reader.svelte',
+  path: './programs/foxit_reader.jsx',
   icon: '/images/xp/icons/PDF.png',
   name: 'Foxit Reader'
 }
 let msword_program = {
-  path: './programs/microsoft_word.svelte',
+  path: './programs/microsoft_word.jsx',
   icon: '/images/xp/icons/DOC.png',
   name: 'Microsoft Word 2003'
 }
 let koodo_program = {
-  path: './programs/koodo.svelte',
+  path: './programs/koodo.jsx',
   icon: '/images/xp/icons/Koodo.png',
   name: 'Koodo Reader'
 }
