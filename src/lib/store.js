@@ -67,19 +67,30 @@ createEffect(() => {
   }
 });
 
-// Load user profiles from IndexedDB
+// Load user profiles, falling back to defaults when IndexedDB is unavailable
 export async function loadUsers() {
-  if (typeof indexedDB === "undefined") return;
-  let stored = await get("users");
-  if (!stored) {
-    stored = [{ id: 1, name: "User", password: "", avatar: "/images/xp/icons/UserAccounts.png" }];
-    await set("users", stored);
-  }
-  setUsers(stored);
+  const defaultUser = { id: 1, name: "User", password: "", avatar: "/images/xp/icons/UserAccounts.png" };
+  let stored;
 
-  const current = await get("current_user");
-  if (current) {
-    setCurrentUser(current);
+  if (typeof indexedDB !== "undefined") {
+    stored = await get("users");
+    if (!stored) {
+      stored = [defaultUser];
+      await set("users", stored);
+    }
+    const current = await get("current_user");
+    setUsers(stored);
+    if (current) {
+      setCurrentUser(current);
+    } else {
+      setCurrentUser(stored[0]);
+      await set("current_user", stored[0]);
+    }
+  } else {
+    // No IndexedDB support (e.g. during server-side rendering or tests)
+    stored = [defaultUser];
+    setUsers(stored);
+    setCurrentUser(stored[0]);
   }
 }
 
