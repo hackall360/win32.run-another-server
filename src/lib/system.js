@@ -165,7 +165,7 @@ let winrar_program = {
 }
 
 let flash_player_program = {
-  path: './programs/flash_player.svelte',
+  path: './programs/flash_player.jsx',
   icon: '/images/xp/icons/FlashPlayer.png',
   name: 'Flash Player'
 }
