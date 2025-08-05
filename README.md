@@ -3,7 +3,7 @@
 
 ![License Unlicense](https://badgen.net/badge/license/Unlicense/green)
 [![css tailwind](https://badgen.net/badge/css/tailwind/blue)](https://github.com/tailwindlabs/tailwindcss)
-[![js framework svelte](https://badgen.net/badge/built/svelte/orange)](https://github.com/sveltejs/svelte)
+[![js framework solid](https://badgen.net/badge/built/solid/blue)](https://github.com/solidjs/solid)
 
 #
 https://user-images.githubusercontent.com/5462728/218907749-22ddea15-8761-4cf3-b162-e2817c0f9db8.mp4
@@ -21,17 +21,13 @@ win32.run is under active development. Community feedback and contributions help
 
 Files (and Folders) in win32.run are stored locally in IndexedDB. Apps (and 3rd-party apps) can interact with files through win32.run homemade file picker and saver dialog (with Windows XP appearance).
 ## Built with
-WIN32.RUN is built with [Svelte](https://github.com/sveltejs/svelte)/[SvelteKit](https://github.com/sveltejs/kit) and [Tailwindcss](https://github.com/tailwindlabs/tailwindcss).
-If you come from a React or Vue background, Svelte is really easy to work with. It doesn't have much boilerplate. 
-
-Writing webapps in Svelte is just like writing vanilla JS, with ```div``` tag for UI and ```script``` tag for logic. One can pick it up in under an hour.
-
-The downside is *surprised breaking changes*.
+WIN32.RUN is built with [SolidJS](https://github.com/solidjs/solid)/[Solid Start](https://github.com/solidjs/solid-start) and [Tailwindcss](https://github.com/tailwindlabs/tailwindcss).
+Solid provides a lightweight React-like developer experience with fine-grained reactivity and JSX.
 
 # Run, build & deploy
 I deploy it on a $5 Vultr instance, there's no special hardware and dependencies requirement here, except Node.js (and NPM).
 
-The project is built with [Svelte](https://github.com/sveltejs/svelte), which may not be great at backward-compatibity at its current phase.  You probably don't want to update Svelte and SvelteKit to newer versions to keep things working.
+The project is built with Solid and Solid Start.
 ## 📦 Install dependencies
 Clone or download from Github
 ```shell
@@ -51,19 +47,19 @@ The dev server is at http://localhost:3000
 ```shell
 npm run build
 ```
-The build output location is win32.run-main/build
-To preview the build
+The build output is written to `dist/` and `.solid/`.
+To run the built server
 ```shell
-npm run preview
+npm start
 ```
 ## Deploy
 I shamelessly share my deployment process.
 
 Follow [this guide](https://www.digitalocean.com/community/tutorials/how-to-set-up-a-node-js-application-for-production-on-ubuntu-20-04) to set up a Ubuntu server with NGINX. I chose Vultr since theirs is cheaper than DigitalOcean's ($5 vs $6).
 
-Put the build folder, package.json, package-lock.json on to the server, ```cd``` then ```npm install```
+Put the build output (`dist` and `.solid`), `package.json`, and `package-lock.json` on the server, `cd` then `npm install`.
 
-Finally, ```pm2 start build/index.js``` to start win32 at localhost:3000
+Finally, run `npm start` (or use a process manager like `pm2 start .solid/server/server.js`) to serve win32 at `localhost:3000`.
 # Documentation
 If you're interested in expanding or customizing win32.run, please have a look at its documentation.
 
