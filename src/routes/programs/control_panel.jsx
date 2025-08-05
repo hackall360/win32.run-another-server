@@ -27,6 +27,11 @@ export default function ControlPanel() {
       name: "Safely Remove Hardware",
       icon: "/images/xp/icons/SafelyRemoveHardware.png",
       path: "./programs/safely_remove_hardware.jsx"
+    },
+    {
+      name: "System Reset",
+      icon: "/images/xp/icons/AdministrativeTools.png",
+      path: "./programs/system_reset.jsx"
     }
   ];
 
