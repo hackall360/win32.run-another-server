@@ -9,6 +9,11 @@ import {
   setScreensaver,
   screensaverTimeout,
   setScreensaverTimeout,
+  loadUsers,
+  users,
+  currentUser,
+  setUsers,
+  setCurrentUser,
 } from '../src/lib/store.js';
 
 test('queueProgram defaults to empty object', () => {
@@ -45,4 +50,16 @@ test('screensaverTimeout defaults to 5', () => {
 test('screensaverTimeout can be updated', () => {
   setScreensaverTimeout(10);
   assert.strictEqual(screensaverTimeout(), 10);
+});
+
+test('loadUsers provides a default user when IndexedDB is unavailable', async () => {
+  // Reset state
+  setUsers([]);
+  setCurrentUser(null);
+
+  await loadUsers();
+
+  const expected = { id: 1, name: 'User', password: '', avatar: '/images/xp/icons/UserAccounts.png' };
+  assert.deepStrictEqual(users(), [expected]);
+  assert.deepStrictEqual(currentUser(), expected);
 });
