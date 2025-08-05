@@ -14,6 +14,7 @@ import {
   currentUser,
   setUsers,
   setCurrentUser,
+  resetSystem,
 } from '../src/lib/store.js';
 
 test('queueProgram defaults to empty object', () => {
@@ -62,4 +63,16 @@ test('loadUsers provides a default user when IndexedDB is unavailable', async ()
   const expected = { id: 1, name: 'User', password: '', avatar: '/images/xp/icons/UserAccounts.png' };
   assert.deepStrictEqual(users(), [expected]);
   assert.deepStrictEqual(currentUser(), expected);
+});
+
+test('resetSystem clears localStorage', async () => {
+  global.localStorage = {
+    store: { foo: 'bar' },
+    getItem(key) { return this.store[key] ?? null; },
+    setItem(key, value) { this.store[key] = String(value); },
+    clear() { this.store = {}; }
+  };
+
+  await resetSystem();
+  assert.deepStrictEqual(global.localStorage.store, {});
 });

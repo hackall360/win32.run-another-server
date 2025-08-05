@@ -1,6 +1,6 @@
 import { createSignal, createEffect } from "solid-js";
 import { themes, applyTheme } from "./themes.js";
-import { set, get } from "idb-keyval";
+import { set, get, clear } from "idb-keyval";
 
 export const [queueProgram, setQueueProgram] = createSignal({});
 export const [runningPrograms, setRunningPrograms] = createSignal([]);
@@ -112,5 +112,15 @@ export async function loadScreensaver() {
   }
   if (timeout != null) {
     setScreensaverTimeout(timeout);
+  }
+}
+
+// Clear all persisted data and return to a fresh install state
+export async function resetSystem() {
+  if (typeof indexedDB !== "undefined") {
+    await clear();
+  }
+  if (typeof localStorage !== "undefined") {
+    localStorage.clear();
   }
 }
