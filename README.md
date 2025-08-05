@@ -10,6 +10,10 @@ https://user-images.githubusercontent.com/5462728/218907749-22ddea15-8761-4cf3-b
 #
 *Microsoft and Windows XP trademarks & logos definitely belong to Microsoft Corporation. All the programs' names and logos (Foxit, Word, WinRar, Internet Explorer, etc.) are of their rightful copyright holders. **win32.run** is purely for the **purpose of nostalgia**. I have no intent and no right to monetize  **win32.run**, but you may occasionally see ads when playing third-party games.*
 
+# Project Status
+
+win32.run is under active development. Community feedback and contributions help the project grow, so please feel free to [open an issue](https://github.com/ducbao414/win32.run-another-server/issues) or submit a pull request. See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
+
 # Introduction
 ## 🦄 It's for nostalgia's sake!
 
@@ -65,8 +69,6 @@ If you're interested in expanding or customizing win32.run, please have a look a
 
 [![Please visit docs.win32.run](https://img.shields.io/badge/view-Documentation-blue?style=for-the-badge)](https://docs.win32.run)
 
-### This project has been discontinued. 
-Even though I don't enjoy React syntax and its methodology, NextJS by Vercel offers a better developer experience than SvelteKit in every way imaginable: it has better backward compatibility, improved tooling, comprehensive documentation, stabability, seamless functionality (everything just worked as expected), rich 3rd-party libraries, less memory consumption, etc.
+## Contributing
 
-While it has been an enjoyable experience working on win32.run, the numerous breaking changes in SvelteKit have rendered its codebase incomprehensible to other developers. It will take a complete restructure to make it work with new SvelteKit releases. 
-I don't see this project contributing in any meaningful way to either developers utilizing Svelte or those in the process of learning Svelte.
+Contributions are welcome! Whether it's reporting bugs, improving documentation, or submitting new features, your help is appreciated. Please read [CONTRIBUTING.md](CONTRIBUTING.md) to learn how to get involved.
