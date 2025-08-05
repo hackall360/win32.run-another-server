@@ -117,6 +117,27 @@ export function set_installing_windows(value){
   localStorage.setItem('is_installing_windows', value);
 }
 
+export function get_hardware_settings() {
+  let value = localStorage.getItem('hardware_settings');
+  try {
+    value = JSON.parse(value);
+  } catch (e) {
+    value = {};
+  }
+  return {
+    ram: Math.min(8192, (value?.ram ?? 128)),
+    cores: Math.min(4, (value?.cores ?? 1))
+  };
+}
+
+export function set_hardware_settings(settings = {}) {
+  const current = get_hardware_settings();
+  const updated = { ...current, ...settings };
+  updated.ram = Math.min(8192, Math.max(16, Number(updated.ram)));
+  updated.cores = Math.min(4, Math.max(1, Number(updated.cores)));
+  localStorage.setItem('hardware_settings', JSON.stringify(updated));
+}
+
 export function set_theme(theme='xp'){
   if(theme == 'xp'){
     document.querySelector('#theme').href = 'https://unpkg.com/xp.css';

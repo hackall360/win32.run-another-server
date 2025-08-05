@@ -13,6 +13,7 @@ export default function BootManager() {
     "Install Windows",
     "Onboard NIC (IPV4)",
     "Onboard NIC (IPV6",
+    "Hardware Manager",
     "BIOS Setup",
     "Device Configuration",
     "BIOS Flash Update",
@@ -42,6 +43,8 @@ export default function BootManager() {
     } else if (currentOption() === 1) {
       utils.set_installing_windows(true);
       navigate("/installation/dos/starting");
+    } else if (currentOption() === 4) {
+      navigate("/hardware_manager");
     }
   };
 
