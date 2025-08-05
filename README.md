@@ -1,6 +1,8 @@
 ### Windows XP in the browser, with a File System, programs, XP-style File Picker and Saver dialogs, 3rd-party program, etc.
 ## [🍭 win32.run](https://win32.run)
 
+**win32.run is actively developed.** We welcome issues, feature requests, and pull requests—see [CONTRIBUTING.md](CONTRIBUTING.md) to get involved.
+
 ![License Unlicense](https://badgen.net/badge/license/Unlicense/green)
 [![css tailwind](https://badgen.net/badge/css/tailwind/blue)](https://github.com/tailwindlabs/tailwindcss)
 [![js framework solid](https://badgen.net/badge/built/solid/blue)](https://github.com/solidjs/solid)
@@ -12,7 +14,7 @@ https://user-images.githubusercontent.com/5462728/218907749-22ddea15-8761-4cf3-b
 
 # Project Status
 
-win32.run is under active development. Community feedback and contributions help the project grow, so please feel free to [open an issue](https://github.com/ducbao414/win32.run-another-server/issues) or submit a pull request. See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
+win32.run is under active development with new features and improvements landing regularly. Community feedback and contributions guide the project's direction, so please feel free to [open an issue](https://github.com/ducbao414/win32.run-another-server/issues) or submit a pull request. See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
 # Introduction
 ## 🦄 It's for nostalgia's sake!
@@ -61,10 +63,10 @@ Put the build output (`dist` and `.solid`), `package.json`, and `package-lock.js
 
 Finally, run `npm start` (or use a process manager like `pm2 start .solid/server/server.js`) to serve win32 at `localhost:3000`.
 # Documentation
-If you're interested in expanding or customizing win32.run, please have a look at its documentation.
+If you're interested in expanding or customizing win32.run, please have a look at its documentation. Contributions and suggestions for improving the docs are always welcome.
 
 [![Please visit docs.win32.run](https://img.shields.io/badge/view-Documentation-blue?style=for-the-badge)](https://docs.win32.run)
 
 ## Contributing
 
-Contributions are welcome! Whether it's reporting bugs, improving documentation, or submitting new features, your help is appreciated. Please read [CONTRIBUTING.md](CONTRIBUTING.md) to learn how to get involved.
+Contributions are welcome! Whether it's reporting bugs, improving documentation, or submitting new features, your help is appreciated. We love seeing new contributors—look for issues labeled **good first issue** or bring your own ideas. Please read [CONTRIBUTING.md](CONTRIBUTING.md) to learn how to get involved.

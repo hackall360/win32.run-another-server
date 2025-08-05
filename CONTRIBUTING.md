@@ -1,6 +1,6 @@
 # Contributing to win32.run
 
-Thank you for considering a contribution to **win32.run**! We welcome bug reports, feature requests, documentation improvements, and pull requests.
+Thank you for considering a contribution to **win32.run**! The project is under active development, and we welcome bug reports, feature requests, documentation improvements, and pull requests.
 
 ## Getting Started
 
@@ -13,3 +13,7 @@ Thank you for considering a contribution to **win32.run**! We welcome bug report
 ## Questions?
 
 If you need help or want to discuss ideas, feel free to open an issue. We appreciate your feedback!
+
+## Looking for a Place to Start?
+
+Browse open issues for those labeled `good first issue` or `help wanted`, or propose your own ideas in a new issue. Contributions of all kinds help the project grow.
