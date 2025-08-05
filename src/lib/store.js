@@ -11,6 +11,9 @@ export const [zIndex, setZIndex] = createSignal(0);
 
 export const [wallpaper, setWallpaper] = createSignal(null);
 
+export const [screensaver, setScreensaver] = createSignal(null);
+export const [screensaverTimeout, setScreensaverTimeout] = createSignal(5);
+
 export const [systemVolume, setSystemVolume] = createSignal(1);
 
 export const [hardDrive, setHardDrive] = createSignal(null);
@@ -53,6 +56,8 @@ createEffect(() => {
 createEffect(() => persist("users", users()));
 createEffect(() => persist("current_user", currentUser()));
 createEffect(() => persist("wallpaper", wallpaper()));
+createEffect(() => persist("screensaver", screensaver()));
+createEffect(() => persist("screensaverTimeout", screensaverTimeout()));
 
 // Apply wallpaper to page background
 createEffect(() => {
@@ -84,5 +89,17 @@ export async function loadTheme() {
   const stored = await get("theme");
   if (stored && themes[stored]) {
     setTheme(stored);
+  }
+}
+
+export async function loadScreensaver() {
+  if (typeof indexedDB === "undefined") return;
+  const ss = await get("screensaver");
+  const timeout = await get("screensaverTimeout");
+  if (ss != null) {
+    setScreensaver(ss);
+  }
+  if (timeout != null) {
+    setScreensaverTimeout(timeout);
   }
 }
