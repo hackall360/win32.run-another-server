@@ -33,8 +33,6 @@
     "hash-sum": "^2.0.0",
     "idb-keyval": "^6.2.2",
     "is-valid-http-url": "^1.0.3",
-    "jquery": "^3.7.1",
-    "jquery-ui": "^1.14.1",
     "jsdom": "^20.0.3",
     "jszip": "^3.10.1",
     "link-preview-js": "^3.1.0",

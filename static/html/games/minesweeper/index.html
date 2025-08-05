@@ -3,42 +3,137 @@
   <link rel="stylesheet" type="text/css" href="minesweeper.css">
 </head>
 <body>
-  
+
   <div id="minesweeper-main">
     <div id="game-container"></div>
-    
   </div>
-
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.1/jquery.min.js" integrity="sha512-aVKKRRi/Q/YV+4mjoKBsE4x3H+BkegoM/em46NNlCqNTmUYADjBbeNefNxYV7giUp0VxICtqdrbqU7iVaeZNXA==" crossorigin="anonymous" referrerpolicy="no-referrer">
-  </script>
-  <script src='minesweeper.js'></script>
 
   <script>
     document.body.style.zoom = parent.document.body.style.zoom;
-    window.addEventListener('contextmenu', (event) => {
-				event.preventDefault();
-			})
-    
-    var ms = new Minesweeper('#minesweeper-main');
+    window.addEventListener('contextmenu', event => event.preventDefault());
+
+    class Minesweeper {
+      constructor(container) {
+        this.container = typeof container === 'string' ? document.querySelector(container) : container;
+        this.SETTINGS = {
+          BEGINNER: { rows: 8, cols: 8, mines: 10 },
+          INTERMEDIATE: { rows: 16, cols: 16, mines: 40 },
+          EXPERT: { rows: 16, cols: 30, mines: 99 }
+        };
+      }
+
+      init(settings) {
+        this.settings = settings;
+        this.container.innerHTML = '';
+        this.board = [];
+        for (let r = 0; r < settings.rows; r++) {
+          const row = [];
+          const rowDiv = document.createElement('div');
+          for (let c = 0; c < settings.cols; c++) {
+            const cell = { mine: false, revealed: false, flag: false, count: 0, element: null };
+            const div = document.createElement('div');
+            div.className = 'cell inset';
+            div.addEventListener('click', () => this.reveal(r, c));
+            div.addEventListener('contextmenu', e => { e.preventDefault(); this.toggleFlag(r, c); });
+            cell.element = div;
+            rowDiv.appendChild(div);
+            row.push(cell);
+          }
+          this.container.appendChild(rowDiv);
+          this.board.push(row);
+        }
+        this.placeMines();
+        this.updateCounts();
+      }
+
+      placeMines() {
+        const { rows, cols, mines } = this.settings;
+        let placed = 0;
+        while (placed < mines) {
+          const r = Math.floor(Math.random() * rows);
+          const c = Math.floor(Math.random() * cols);
+          if (!this.board[r][c].mine) {
+            this.board[r][c].mine = true;
+            placed++;
+          }
+        }
+      }
+
+      updateCounts() {
+        const dirs = [-1, 0, 1];
+        for (let r = 0; r < this.settings.rows; r++) {
+          for (let c = 0; c < this.settings.cols; c++) {
+            if (this.board[r][c].mine) continue;
+            let count = 0;
+            dirs.forEach(dr => dirs.forEach(dc => {
+              if (dr === 0 && dc === 0) return;
+              const nr = r + dr, nc = c + dc;
+              if (this.board[nr] && this.board[nr][nc] && this.board[nr][nc].mine) count++;
+            }));
+            this.board[r][c].count = count;
+          }
+        }
+      }
+
+      reveal(r, c) {
+        const cell = this.board[r][c];
+        if (cell.revealed || cell.flag) return;
+        cell.revealed = true;
+        cell.element.classList.add('revealed');
+        cell.element.classList.remove('inset');
+        if (cell.mine) {
+          cell.element.textContent = '💣';
+          cell.element.classList.add('cell-X');
+          return;
+        }
+        if (cell.count > 0) {
+          cell.element.textContent = cell.count;
+          cell.element.classList.add(`cell-${cell.count}`);
+        } else {
+          this.forEachNeighbor(r, c, (nr, nc) => this.reveal(nr, nc));
+        }
+        this.checkWin();
+      }
+
+      toggleFlag(r, c) {
+        const cell = this.board[r][c];
+        if (cell.revealed) return;
+        cell.flag = !cell.flag;
+        cell.element.textContent = cell.flag ? '🚩' : '';
+      }
+
+      forEachNeighbor(r, c, fn) {
+        for (let dr = -1; dr <= 1; dr++) {
+          for (let dc = -1; dc <= 1; dc++) {
+            if (dr === 0 && dc === 0) continue;
+            const nr = r + dr, nc = c + dc;
+            if (this.board[nr] && this.board[nr][nc]) fn(nr, nc);
+          }
+        }
+      }
+
+      checkWin() {
+        let revealed = 0;
+        const { rows, cols, mines } = this.settings;
+        for (let r = 0; r < rows; r++) {
+          for (let c = 0; c < cols; c++) {
+            const cell = this.board[r][c];
+            if (!cell.mine && cell.revealed) revealed++;
+          }
+        }
+        if (revealed === rows * cols - mines) {
+          setTimeout(() => alert('You win!'), 10);
+        }
+      }
+    }
+
+    const ms = new Minesweeper('#game-container');
     ms.init(ms.SETTINGS.BEGINNER);
-    // ms.init(ms.SETTINGS.EXPERT);
 
-    function new_game(){
-        ms.init(ms.settings);
-    }
-
-    function beginner(){
-        console.log('beginner');
-        ms.init(ms.SETTINGS.BEGINNER);
-    }
-
-    function intermediate(){
-        ms.init(ms.SETTINGS.INTERMEDIATE);
-    }
-
-    function expert(){
-        ms.init(ms.SETTINGS.EXPERT);
-    }
+    function new_game(){ ms.init(ms.settings); }
+    function beginner(){ ms.init(ms.SETTINGS.BEGINNER); }
+    function intermediate(){ ms.init(ms.SETTINGS.INTERMEDIATE); }
+    function expert(){ ms.init(ms.SETTINGS.EXPERT); }
   </script>
 </body>
 </html>

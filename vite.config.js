@@ -9,6 +9,6 @@ export default defineConfig({
     port: 3000
   },
   optimizeDeps: {
-    include: ["jquery", "jquery-ui"]
+    include: []
   }
 });
