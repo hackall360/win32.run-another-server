@@ -1,58 +1,60 @@
-import path from 'path';
-import dir from 'node-dir';
-import fs from 'fs';
+import path from 'node:path';
+import { readdir, readFile } from 'node:fs/promises';
 
-let excluded_source_files = ['src/routes/xp/starting.svelte'];
+const excludedSourceFiles = new Set();
 
-let source_files = [
-    ...dir.files('./src/', {sync: true}),
-    'static/json/hard_drive.json',
-    'svelte.config.js',
-    'tailwind.config.cjs',
-    'vite.config.js'
-]
-.filter(el => ['.js', '.json', '.svelte', '.css', '.cjs', '.html'].includes(path.extname(el)))
-.filter(el => !excluded_source_files.includes(el));
-
-
-(async () => {
-
-    let remote_files = dir.files('./static/files/', {sync: true})
-    .filter(file => ['.png', '.jpg', '.mp3'].includes(path.extname(file)))
-    .filter(file => included(file))
-    .map(file => file.replace(/^static/i, ''));
-    
-    let images = dir.files('./static/images/', {sync: true})
-    .filter(file => ['.png', '.jpg', '.svg', '.gif'].includes(path.extname(file)))
-    .filter(file => included(file))
-    .map(file => file.replace(/^static/i, ''));
-
-    let fonts = dir.files('./static/fonts/', {sync: true})
-    .filter(file => ['.ttf'].includes(path.extname(file)))
-    .filter(file => included(file))
-    .map(file => file.replace(/^static/i, ''));
-
-    let audios = dir.files('./static/audio/', {sync: true})
-    .filter(file => ['.mp3', '.wav'].includes(path.extname(file)))
-    .filter(file => included(file))
-    .map(file => file.replace(/^static/i, ''));
-
-    let empties = dir.files('./static/empty/', {sync: true})
-    .filter(file => included(file))
-    .map(file => file.replace(/^static/i, ''));
-
-
-    let assets = {remote_files, images, audios, fonts, empties};
-    for(let key of Object.keys(assets)){
-        console.log('let ' + key + ' = ' + JSON.stringify(assets[key]) + ';\n');
-    }
-})()
-
-function included(asset){
-    let basename = path.basename(asset);
-    for(let file of source_files){
-        let content = fs.readFileSync(file, 'utf-8');
-        if(content.includes(basename)) return true;
-    }
-    return false;
+async function walk(dir) {
+  const dirents = await readdir(dir, { withFileTypes: true });
+  const files = await Promise.all(
+    dirents.map(async (dirent) => {
+      const res = path.join(dir, dirent.name);
+      return dirent.isDirectory() ? await walk(res) : res;
+    })
+  );
+  return files.flat();
 }
+
+const sourceFiles = [
+  ...(await walk('./src')),
+  'static/json/hard_drive.json',
+  'svelte.config.js',
+  'tailwind.config.cjs',
+  'vite.config.js'
+]
+  .filter((file) =>
+    ['.js', '.jsx', '.json', '.svelte', '.css', '.cjs', '.html'].includes(
+      path.extname(file)
+    )
+  )
+  .filter((file) => !excludedSourceFiles.has(file));
+
+const sourceContent = (
+  await Promise.all(
+    sourceFiles.map((file) => readFile(file, 'utf-8').catch(() => ''))
+  )
+).join('\n');
+
+function included(asset) {
+  return sourceContent.includes(path.basename(asset));
+}
+
+async function collect(dir, exts) {
+  const files = await walk(dir);
+  return files
+    .filter((file) => exts.length === 0 || exts.includes(path.extname(file)))
+    .filter((file) => included(file))
+    .map((file) => file.replace(/^static/i, ''));
+}
+
+const remote_files = await collect('./static/files', ['.png', '.jpg', '.mp3']);
+const images = await collect('./static/images', ['.png', '.jpg', '.svg', '.gif']);
+const fonts = await collect('./static/fonts', ['.ttf']);
+const audios = await collect('./static/audio', ['.mp3', '.wav']);
+const empties = await collect('./static/empty', []);
+
+const assets = { remote_files, images, audios, fonts, empties };
+
+for (const [key, value] of Object.entries(assets)) {
+  console.log(`const ${key} = ${JSON.stringify(value)};\n`);
+}
+
