@@ -1,7 +1,8 @@
 import { EventEmitter } from 'events';
-import { sendPacket } from './ip.js';
+import { sendPacket, resolveAddress } from './ip.js';
 
 const servers = new Map(); // key: address:port -> handler
+const usedPorts = new Map(); // address -> Set of ports
 
 function key(addr, port) {
   return `${addr}:${port}`;
@@ -42,12 +43,13 @@ class TCPSocket extends EventEmitter {
 
   close() {
     this.adapter.off('packet', this._onPacket);
+    releasePort(this.adapter.address, this.localPort);
   }
 }
 
 export function createServer(adapter, port, onConnection) {
   const serverKey = key(adapter.address, port);
-  if (servers.has(serverKey)) {
+  if (servers.has(serverKey) || isPortUsed(adapter.address, port)) {
     throw new Error('Port already in use');
   }
   const handler = (pkt) => {
@@ -65,21 +67,43 @@ export function createServer(adapter, port, onConnection) {
   };
   adapter.on('packet', handler);
   servers.set(serverKey, handler);
+  markPort(adapter.address, port);
   return {
     close() {
       adapter.off('packet', handler);
       servers.delete(serverKey);
+      releasePort(adapter.address, port);
     }
   };
 }
 
 let nextPort = 40000;
-function allocPort() {
-  return nextPort++;
+function allocPort(address) {
+  let port = nextPort;
+  while (isPortUsed(address, port)) port++;
+  nextPort = port + 1;
+  markPort(address, port);
+  return port;
+}
+
+function markPort(address, port) {
+  if (!usedPorts.has(address)) usedPorts.set(address, new Set());
+  usedPorts.get(address).add(port);
+}
+
+function releasePort(address, port) {
+  usedPorts.get(address)?.delete(port);
+}
+
+function isPortUsed(address, port) {
+  return usedPorts.get(address)?.has(port);
 }
 
 export function connect(adapter, destAddr, destPort) {
-  const localPort = allocPort();
+  if (!resolveAddress(adapter.address, destAddr)) {
+    throw new Error('Host unreachable');
+  }
+  const localPort = allocPort(adapter.address);
   const sock = new TCPSocket(adapter, localPort, destAddr, destPort);
   sendPacket(adapter.address, destAddr, 'TCP', {
     type: 'CONNECT',
@@ -90,3 +114,10 @@ export function connect(adapter, destAddr, destPort) {
 }
 
 export { TCPSocket };
+
+export function _clear() {
+  servers.clear();
+  usedPorts.clear();
+  nextPort = 40000;
+}
+
