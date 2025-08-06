@@ -5,6 +5,9 @@ import { set, get, clear } from "idb-keyval";
 export const [queueProgram, setQueueProgram] = createSignal({});
 export const [runningPrograms, setRunningPrograms] = createSignal([]);
 
+// Programs installed in the emulated system
+export const [installedPrograms, setInstalledPrograms] = createSignal([]);
+
 export const [selectingItems, setSelectingItems] = createSignal([]);
 export const [contextMenu, setContextMenu] = createSignal(null);
 export const [zIndex, setZIndex] = createSignal(0);
