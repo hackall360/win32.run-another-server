@@ -9,6 +9,8 @@ import {
   setScreensaver,
   screensaverTimeout,
   setScreensaverTimeout,
+  connectionType,
+  setConnectionType,
   loadUsers,
   users,
   currentUser,
@@ -51,6 +53,15 @@ test('screensaverTimeout defaults to 5', () => {
 test('screensaverTimeout can be updated', () => {
   setScreensaverTimeout(10);
   assert.strictEqual(screensaverTimeout(), 10);
+});
+
+test('connectionType defaults to unlimited', () => {
+  assert.strictEqual(connectionType(), 'unlimited');
+});
+
+test('connectionType can be updated', () => {
+  setConnectionType('dialup');
+  assert.strictEqual(connectionType(), 'dialup');
 });
 
 test('loadUsers provides a default user when IndexedDB is unavailable', async () => {

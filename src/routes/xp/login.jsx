@@ -14,7 +14,8 @@ import {
   setCurrentUser,
   loadUsers,
   loadTheme,
-  loadScreensaver
+  loadScreensaver,
+  loadConnectionType
 } from "../../lib/store";
 import { bliss_wallpaper, SortOptions, SortOrders } from "../../lib/system";
 import { useNavigate } from "@solidjs/router";
@@ -32,6 +33,7 @@ export default function Login() {
     await loadHardDrive();
     await loadWallpaper();
     await loadScreensaver();
+    await loadConnectionType();
     preloadIframes();
     preloadContextMenus();
   });

@@ -1,4 +1,5 @@
 import { createSignal, onCleanup, onMount, Show } from "solid-js";
+import { connectionType, setConnectionType } from "../../lib/store";
 
 export default function NetworkStatus() {
   const [online, setOnline] = createSignal(navigator.onLine);
@@ -30,7 +31,21 @@ export default function NetworkStatus() {
   });
 
   return (
-    <div class="p-4 text-sm space-y-1">
+    <div class="p-4 text-sm space-y-2">
+      <div>
+        <label class="block mb-1">Connection</label>
+        <select
+          class="border p-1"
+          value={connectionType()}
+          onChange={(e) => setConnectionType(e.currentTarget.value)}
+        >
+          <option value="unlimited">Unlimited</option>
+          <option value="2000">2000</option>
+          <option value="90s">90s</option>
+          <option value="80s">80s</option>
+          <option value="dialup">Dial-up</option>
+        </select>
+      </div>
       <div>Status: {online() ? "Online" : "Offline"}</div>
       <Show when={connection().effectiveType}>
         <div>Connection type: {connection().effectiveType}</div>
