@@ -37,16 +37,33 @@ export const timer = {
 };
 
 export const powerManagement = (() => {
-  let state = 'on';
+  let systemState = 'on';
+  const deviceStates = new Map();
   return {
     shutdown() {
-      state = 'off';
+      systemState = 'off';
     },
     reboot() {
-      state = 'rebooting';
+      systemState = 'rebooting';
+    },
+    sleep() {
+      systemState = 'sleep';
+    },
+    hibernate() {
+      systemState = 'hibernate';
     },
     getState() {
-      return state;
+      return systemState;
+    },
+    setDeviceState(id, state) {
+      deviceStates.set(id, state);
+    },
+    getDeviceState(id) {
+      return deviceStates.get(id) ?? 'on';
+    },
+    reset() {
+      systemState = 'on';
+      deviceStates.clear();
     }
   };
 })();
