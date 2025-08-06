@@ -6,13 +6,19 @@ import { cacheManager } from '../kernel/executive/fs/cacheManager.js';
 
 function exercise(fs) {
   fs.mount();
-  fs.writeFile('/foo.txt', Buffer.from('hello'));
-  assert.strictEqual(fs.readFile('/foo.txt').toString(), 'hello');
-  const meta = fs.getMetadata('/foo.txt');
+  fs.mkdir('/dir');
+  fs.mkdir('/dir/sub');
+  fs.writeFile('\\DIR\\SUB\\..\\SUB\\foo.txt', Buffer.from('hello'));
+  assert.strictEqual(fs.readFile('/dir/sub/foo.txt').toString(), 'hello');
+  const meta = fs.getMetadata('/dir/sub/foo.txt');
   assert.strictEqual(meta.size, 5);
+  assert.deepStrictEqual(fs.listDir('/dir').map(n => n.toLowerCase()), ['sub']);
+  assert.deepStrictEqual(fs.listDir('/dir/sub').map(n => n.toLowerCase()), ['foo.txt']);
+  fs.remove('/dir/sub/foo.txt');
+  assert.deepStrictEqual(fs.listDir('/dir/sub'), []);
 }
 
-test('FAT and NTFS basic operations', () => {
+test('FAT and NTFS basic operations with directories', () => {
   exercise(new FATFileSystem());
   exercise(new NTFSFileSystem());
 });
@@ -21,12 +27,28 @@ test('cache manager buffers file reads', () => {
   const fs = new FATFileSystem();
   fs.mount();
   fs.writeFile('/cache.txt', Buffer.from('cached'));
-  // Change underlying storage without invalidating cache
   const key = fs._normalizePath('/cache.txt');
-  fs.files.get(key).data = Buffer.from('modified');
+  // Change underlying storage without invalidating cache
+  fs._getFile(key).data = Buffer.from('modified');
   // Should return cached data
   assert.strictEqual(fs.readFile('/cache.txt').toString(), 'cached');
   // After invalidation, should reflect modified data
-  cacheManager.invalidate(fs, '/cache.txt');
+  cacheManager.invalidate(fs, key);
   assert.strictEqual(fs.readFile('/cache.txt').toString(), 'modified');
+});
+
+test('concurrent handles maintain reference counts', () => {
+  const fs = new NTFSFileSystem();
+  fs.mount();
+  fs.writeFile('/handle.txt', Buffer.from('orig'));
+  const h1 = fs.open('/handle.txt');
+  const h2 = fs.open('/handle.txt');
+  fs.write(h1, Buffer.from('data'));
+  assert.strictEqual(fs.read(h2).toString(), 'data');
+  assert.throws(() => fs.remove('/handle.txt'));
+  fs.close(h1);
+  assert.throws(() => fs.remove('/handle.txt'));
+  fs.close(h2);
+  fs.remove('/handle.txt');
+  assert.deepStrictEqual(fs.listDir('/'), []);
 });
