@@ -1,3 +1,6 @@
+import { logError } from '../../system/eventLog.js';
+import { createCrashDump } from '../../system/crashDump.js';
+
 export class PhysicalMemory {
   constructor(totalPages = 256, pageSize = 4096, kernelHeapPages = 16) {
     this.pageSize = pageSize;
@@ -22,7 +25,10 @@ export class PhysicalMemory {
     const iterator = this.freeFrames.values();
     const result = iterator.next();
     if (result.done) {
-      throw new Error('Out of physical memory');
+      const error = new Error('Out of physical memory');
+      logError('PhysicalMemory.allocateFrame', error);
+      createCrashDump('out_of_physical_memory');
+      throw error;
     }
     const frame = result.value;
     this.freeFrames.delete(frame);
@@ -31,7 +37,10 @@ export class PhysicalMemory {
 
   freeFrame(frame) {
     if (frame < 0 || frame >= this.totalPages) {
-      throw new Error('Invalid frame number');
+      const error = new Error('Invalid frame number');
+      logError('PhysicalMemory.freeFrame', error, { frame });
+      createCrashDump('invalid_frame_number', { frame });
+      throw error;
     }
     this.freeFrames.add(frame);
   }
@@ -47,7 +56,10 @@ export class PhysicalMemory {
   allocateKernel(size) {
     const { start, size: heapSize, next } = this.kernelHeap;
     if (next + size > heapSize) {
-      throw new Error('Kernel heap exhausted');
+      const error = new Error('Kernel heap exhausted');
+      logError('PhysicalMemory.allocateKernel', error, { size });
+      createCrashDump('kernel_heap_exhausted', { size });
+      throw error;
     }
     const addr = start + next;
     this.kernelHeap.next += size;

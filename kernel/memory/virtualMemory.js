@@ -1,4 +1,6 @@
 import { PhysicalMemory } from './physicalMemory.js';
+import { logError } from '../../system/eventLog.js';
+import { createCrashDump } from '../../system/crashDump.js';
 
 // Permission helper
 function normalizePerms(perms = {}) {
@@ -76,7 +78,10 @@ export class VirtualMemory {
       return;
     }
 
-    throw new Error(`Page fault at address ${addr}`);
+    const error = new Error(`Page fault at address ${addr}`);
+    logError('VirtualMemory.pageFault', error, { addr });
+    createCrashDump('page_fault', { addr });
+    throw error;
   }
 
   setPageFaultHandler(handler) {
@@ -207,7 +212,10 @@ export class VirtualMemory {
       }
     }
     if (!entry.perms[mode]) {
-      throw new Error('Permission violation');
+      const error = new Error('Permission violation');
+      logError('VirtualMemory.translate', error, { address: virtualAddress, mode });
+      createCrashDump('permission_violation', { address: virtualAddress, mode });
+      throw error;
     }
     return entry.frame * this.pageSize + offset;
   }

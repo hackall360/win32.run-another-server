@@ -1,3 +1,6 @@
+import { logError } from '../../system/eventLog.js';
+import { createCrashDump } from '../../system/crashDump.js';
+
 /**
  * Represents a stack of layered drivers. IRPs traverse the stack
  * from the top driver down to the lowest driver.
@@ -21,11 +24,23 @@ export class DriverStack {
     const next = () => {
       const driver = this.drivers[index++];
       if (driver && typeof driver.handleIrp === 'function') {
-        return driver.handleIrp(irp, next);
+        try {
+          return driver.handleIrp(irp, next);
+        } catch (err) {
+          logError('DriverStack.send', err, { driver: driver.name });
+          createCrashDump('driver_irp_failure', { driver: driver.name, irp });
+          throw err;
+        }
       }
       return irp.status;
     };
-    return next();
+    try {
+      return next();
+    } catch (err) {
+      logError('DriverStack.send', err);
+      createCrashDump('driver_stack_failure', { irp });
+      throw err;
+    }
   }
 }
 
