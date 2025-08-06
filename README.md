@@ -26,6 +26,28 @@ Files (and Folders) in win32.run are stored locally in IndexedDB. Apps (and 3rd-
 WIN32.RUN is built with [SolidJS](https://github.com/solidjs/solid)/[Solid Start](https://github.com/solidjs/solid-start) and [Tailwindcss](https://github.com/tailwindlabs/tailwindcss).
 Solid provides a lightweight React-like developer experience with fine-grained reactivity and JSX.
 
+## Kernel API
+
+win32.run now includes a minimal JavaScript kernel located at `src/lib/kernel.js`. The kernel
+allows programs to be installed and launched at runtime and exposes a simple subsystem registry
+that other features can build on top of.
+
+```javascript
+import kernel from './lib/kernel';
+
+kernel.installProgram({ id: 'demo', name: 'Demo', path: './programs/demo.jsx' });
+kernel.launchProgram('demo');
+```
+
+Subsystems can extend the kernel:
+
+```javascript
+kernel.registerSubsystem('theme', { apply: name => {/* ... */} });
+```
+
+These hooks provide a starting point for enhancing the authenticity of the emulated Windows XP
+environment.
+
 # Run, build & deploy
 I deploy it on a $5 Vultr instance, there's no special hardware and dependencies requirement here, except Node.js (and NPM).
 
