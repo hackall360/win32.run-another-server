@@ -16,6 +16,15 @@ export const [screensaverTimeout, setScreensaverTimeout] = createSignal(5);
 
 export const [systemVolume, setSystemVolume] = createSignal(1);
 
+export const connectionSpeeds = {
+  unlimited: Infinity,
+  "2000": 125000,
+  "90s": 3600,
+  "80s": 150,
+  dialup: 7000,
+};
+export const [connectionType, setConnectionType] = createSignal("unlimited");
+
 export const [hardDrive, setHardDrive] = createSignal(null);
 export const [clipboard, setClipboard] = createSignal([]);
 export const [clipboardOp, setClipboardOp] = createSignal("copy");
@@ -58,6 +67,7 @@ createEffect(() => persist("current_user", currentUser()));
 createEffect(() => persist("wallpaper", wallpaper()));
 createEffect(() => persist("screensaver", screensaver()));
 createEffect(() => persist("screensaverTimeout", screensaverTimeout()));
+createEffect(() => persist("connectionType", connectionType()));
 
 // Apply wallpaper to page background
 createEffect(() => {
@@ -112,6 +122,14 @@ export async function loadScreensaver() {
   }
   if (timeout != null) {
     setScreensaverTimeout(timeout);
+  }
+}
+
+export async function loadConnectionType() {
+  if (typeof indexedDB === "undefined") return;
+  const stored = await get("connectionType");
+  if (stored && connectionSpeeds[stored] != null) {
+    setConnectionType(stored);
   }
 }
 

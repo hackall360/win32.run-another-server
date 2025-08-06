@@ -1,4 +1,4 @@
-import mime_db from './mime.json' assert { type: 'json' };
+import mime_db from './mime.json' with { type: 'json' };
 
 export function compile_params(new_params){
     
