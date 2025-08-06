@@ -14,9 +14,9 @@ export class Scheduler {
     this.cpuContext = { registers: {}, sp: 0 };
   }
 
-  createProcess(priority = 0, token = systemToken) {
+  createProcess(priority = 0, token = systemToken, job = null, session = null) {
     try {
-      const proc = this.table.createProcess(priority, token);
+      const proc = this.table.createProcess(priority, token, job, session);
       this.enqueue(proc);
       return proc;
     } catch (err) {
