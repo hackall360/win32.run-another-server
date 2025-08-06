@@ -63,6 +63,7 @@ export async function bootstrap(options = {}) {
   const idleThread = new Thread(() => {});
   idleProcess.addThread(idleThread);
   scheduler.contextSwitch(idleProcess);
+  scheduler.start();
 
   // Launch initial system services
   for (const { name, service } of services) {

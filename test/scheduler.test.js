@@ -1,6 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert';
 import { Scheduler, Mutex, Semaphore, Spinlock } from '../kernel/scheduler.js';
+import { Thread } from '../kernel/thread.js';
 
 // Test that scheduler prioritizes higher priority processes
 
@@ -62,4 +63,49 @@ test('spinlock provides exclusive access', async () => {
   };
   await Promise.all([inc(), inc()]);
   assert.strictEqual(counter, 2);
+});
+
+// Test preemption via time slice
+
+test('scheduler preempts based on time slice', async () => {
+  const sched = new Scheduler(5);
+  const p1 = sched.createProcess(1);
+  sched.contextSwitch(p1);
+  const p2 = sched.createProcess(2);
+  sched.start();
+  await new Promise(r => setTimeout(r, 20));
+  assert.strictEqual(sched.current, p2);
+  sched.stop();
+});
+
+// Test adjusting priority and time slice
+
+test('allows adjusting priority and time slice', async () => {
+  const sched = new Scheduler(20);
+  const p1 = sched.createProcess(1);
+  sched.setPriority(p1, 5);
+  assert.strictEqual(p1.priority, 5);
+  sched.setTimeSlice(10);
+  sched.start();
+  await new Promise(r => setTimeout(r, 15));
+  sched.stop();
+  assert.strictEqual(sched.timeSliceMs, 10);
+});
+
+// Test context preservation
+
+test('preserves thread context across preemption', () => {
+  const sched = new Scheduler();
+  const p1 = sched.createProcess(1);
+  const t1 = new Thread(() => {});
+  p1.addThread(t1);
+  sched.contextSwitch(p1);
+  sched.cpuContext = { registers: { ax: 1 }, sp: 100 };
+  const p2 = sched.createProcess(1);
+  const t2 = new Thread(() => {});
+  p2.addThread(t2);
+  sched.contextSwitch(p2);
+  assert.deepStrictEqual(t1.context, { registers: { ax: 1 }, sp: 100 });
+  sched.contextSwitch(p1);
+  assert.deepStrictEqual(sched.cpuContext, { registers: { ax: 1 }, sp: 100 });
 });

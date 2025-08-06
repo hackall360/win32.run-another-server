@@ -5,7 +5,15 @@ export class Thread {
     this.tid = nextTid++;
     this.entry = entry;
     this.state = 'ready';
-    this.context = {};
+    this.context = { registers: {}, sp: 0 };
+  }
+
+  saveContext(ctx) {
+    this.context = { ...ctx };
+  }
+
+  loadContext() {
+    return { ...this.context };
   }
 
   async start(...args) {
