@@ -2,12 +2,15 @@ import { test } from 'node:test';
 import assert from 'node:assert';
 import { ProcessTable } from '../kernel/process.js';
 import { createToken } from '../kernel/executive/security.js';
+import { addUser, logonUser } from '../kernel/executive/security/users.js';
 
-test('process creation requires privilege', () => {
+test('process creation requires logged-on token with privilege', () => {
   const table = new ProcessTable();
-  const user = createToken('user');
-  assert.throws(() => table.createProcess(0, user));
-  const admin = createToken('system', [], ['createProcess']);
-  const proc = table.createProcess(0, admin);
+  const raw = createToken('user', [], ['createProcess']);
+  assert.throws(() => table.createProcess(0, raw));
+  addUser('alice', 'pw');
+  const token = logonUser('alice', 'pw');
+  token.privileges.add('createProcess');
+  const proc = table.createProcess(0, token);
   assert.strictEqual(proc.pid, 1);
 });

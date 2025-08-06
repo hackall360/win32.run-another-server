@@ -1,4 +1,5 @@
 import { systemToken } from './executive/security.js';
+import { isLoggedOn } from './executive/security/users.js';
 
 export class Process {
   constructor(pid, priority = 0, token = systemToken) {
@@ -22,11 +23,15 @@ export class ProcessTable {
   }
 
   createProcess(priority = 0, token = systemToken) {
-    if (!token.hasPrivilege('createProcess')) {
+    const effective = token.getEffectiveToken();
+    if (effective !== systemToken && !isLoggedOn(effective)) {
+      throw new Error('Invalid token');
+    }
+    if (!effective.hasPrivilege('createProcess')) {
       throw new Error('Access denied');
     }
     const pid = this.nextPid++;
-    const process = new Process(pid, priority, token);
+    const process = new Process(pid, priority, effective);
     this.processes.set(pid, process);
     return process;
   }
