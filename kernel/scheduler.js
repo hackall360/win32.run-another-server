@@ -1,11 +1,15 @@
 import { ProcessTable } from './process.js';
 import { systemToken } from './executive/security.js';
+import { timer } from '../src/lib/hal/index.js';
 
 export class Scheduler {
-  constructor() {
+  constructor(timeSliceMs = 50) {
     this.table = new ProcessTable();
     this.readyQueue = [];
     this.current = null;
+    this.timeSliceMs = timeSliceMs;
+    this.timerId = null;
+    this.cpuContext = { registers: {}, sp: 0 };
   }
 
   createProcess(priority = 0, token = systemToken) {
@@ -35,10 +39,45 @@ export class Scheduler {
 
   contextSwitch(proc) {
     if (this.current) {
+      const thread = this.current.threads[0];
+      if (thread) {
+        thread.context = { ...this.cpuContext };
+      }
       this.current.state = 'ready';
     }
     this.current = proc;
     proc.state = 'running';
+    const thread = proc.threads[0];
+    if (thread) {
+      this.cpuContext = { ...thread.context };
+    }
+  }
+
+  start() {
+    this.stop();
+    this.timerId = timer.setTimeout(() => {
+      this.schedule();
+      this.start();
+    }, this.timeSliceMs);
+  }
+
+  stop() {
+    if (this.timerId !== null) {
+      timer.clearTimeout(this.timerId);
+      this.timerId = null;
+    }
+  }
+
+  setTimeSlice(ms) {
+    this.timeSliceMs = ms;
+    if (this.timerId !== null) {
+      this.start();
+    }
+  }
+
+  setPriority(proc, priority) {
+    proc.priority = priority;
+    this.readyQueue.sort((a, b) => b.priority - a.priority);
   }
 }
 
