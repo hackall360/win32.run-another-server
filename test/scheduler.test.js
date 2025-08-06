@@ -2,6 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert';
 import { Scheduler, Mutex, Semaphore, Spinlock } from '../kernel/scheduler.js';
 import { Thread } from '../kernel/thread.js';
+import { KernelEvent } from '../kernel/event.js';
 
 // Test that scheduler prioritizes higher priority processes
 
@@ -108,4 +109,52 @@ test('preserves thread context across preemption', () => {
   assert.deepStrictEqual(t1.context, { registers: { ax: 1 }, sp: 100 });
   sched.contextSwitch(p1);
   assert.deepStrictEqual(sched.cpuContext, { registers: { ax: 1 }, sp: 100 });
+});
+
+// Test event-based waiting
+
+test('thread waits for event and resumes when signaled', async () => {
+  const sched = new Scheduler();
+  const p = sched.createProcess(1);
+  const t = new Thread(() => {}, sched);
+  p.addThread(t);
+  sched.contextSwitch(p);
+  const ev = new KernelEvent(false, sched);
+  const wait = t.wait(ev);
+  assert.strictEqual(t.state, 'blocked');
+  ev.set();
+  await wait;
+  assert.strictEqual(t.state, 'ready');
+});
+
+// Test waiting on multiple objects
+
+test('supports waiting on multiple objects', async () => {
+  const sched = new Scheduler();
+  const p = sched.createProcess(1);
+  const t = new Thread(() => {}, sched);
+  p.addThread(t);
+  sched.contextSwitch(p);
+  const e1 = new KernelEvent(false, sched);
+  const e2 = new KernelEvent(false, sched);
+  const wait = t.wait([e1, e2]);
+  e2.set();
+  await wait;
+  assert.strictEqual(t.state, 'ready');
+});
+
+// Test timeout waiting
+
+test('wait times out when no object signaled', async () => {
+  const sched = new Scheduler();
+  const p = sched.createProcess(1);
+  const t = new Thread(() => {}, sched);
+  p.addThread(t);
+  sched.contextSwitch(p);
+  const e = new KernelEvent(false, sched);
+  const start = Date.now();
+  await t.wait(e, 10);
+  const elapsed = Date.now() - start;
+  assert.ok(elapsed >= 10);
+  assert.strictEqual(t.state, 'ready');
 });
