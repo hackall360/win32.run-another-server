@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert';
 import deviceManager from '../kernel/io/deviceManager.js';
-import { irqController } from '../kernel/io/irq.js';
+import { interruptController } from '../kernel/io/index.js';
 import StorageDriver from '../kernel/io/drivers/storage.js';
 import NetworkDriver from '../kernel/io/drivers/network.js';
 import DisplayDriver from '../kernel/io/drivers/display.js';
@@ -32,7 +32,7 @@ test('irq triggers driver handlers', () => {
   setup();
   const network = new NetworkDriver();
   deviceManager.registerDriver(network);
-  irqController.trigger('IRQ_NETWORK', 'packet');
+  interruptController.trigger('IRQ_NETWORK', 'packet');
   assert.strictEqual(network.irqCount, 1);
   assert.strictEqual(network.lastIRQ, 'packet');
 });

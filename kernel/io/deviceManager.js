@@ -1,4 +1,4 @@
-import irqController from './irq.js';
+import { interruptController } from '../../src/lib/hal/index.js';
 
 export class DeviceManager {
   constructor() {
@@ -8,7 +8,7 @@ export class DeviceManager {
   registerDriver(driver) {
     this.drivers.set(driver.name, driver);
     if (driver.irq) {
-      irqController.register(driver.irq, data => {
+      interruptController.register(driver.irq, data => {
         if (typeof driver.handleIRQ === 'function') {
           driver.handleIRQ(data);
         }
@@ -27,7 +27,7 @@ export class DeviceManager {
   reset() {
     for (const driver of this.drivers.values()) {
       if (driver.irq) {
-        irqController.clear(driver.irq);
+        interruptController.clear(driver.irq);
       }
     }
     this.drivers.clear();
