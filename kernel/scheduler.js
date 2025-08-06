@@ -1,4 +1,5 @@
 import { ProcessTable } from './process.js';
+import { systemToken } from './executive/security.js';
 
 export class Scheduler {
   constructor() {
@@ -7,8 +8,8 @@ export class Scheduler {
     this.current = null;
   }
 
-  createProcess(priority = 0) {
-    const proc = this.table.createProcess(priority);
+  createProcess(priority = 0, token = systemToken) {
+    const proc = this.table.createProcess(priority, token);
     this.enqueue(proc);
     return proc;
   }

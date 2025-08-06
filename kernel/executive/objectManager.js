@@ -1,3 +1,5 @@
+import { checkAccess, systemToken } from './security.js';
+
 class Namespace {
   constructor() {
     this.objects = new Map(); // name -> entry
@@ -42,13 +44,6 @@ export class ObjectManager {
     return entry;
   }
 
-  _getRights(entry, sid) {
-    if (entry.acl.has(sid)) {
-      return entry.acl.get(sid);
-    }
-    return entry.rights;
-  }
-
   registerObject(path, object, options = {}) {
     const { rights = ['read', 'write'], acl = {} } = options;
     const { ns, name } = this._resolve(path, true);
@@ -73,13 +68,10 @@ export class ObjectManager {
     ns.objects.set(name, entry);
   }
 
-  openHandle(path, desiredRights = ['read'], sid = 'system') {
+  openHandle(path, desiredRights = ['read'], token = systemToken) {
     const entry = this._getEntry(path);
-    const available = this._getRights(entry, sid);
-    for (const r of desiredRights) {
-      if (!available.has(r)) {
-        throw new Error('Access denied');
-      }
+    if (!checkAccess(token, entry, desiredRights)) {
+      throw new Error('Access denied');
     }
     const handle = this.nextHandle++;
     this.handleTable.set(handle, {

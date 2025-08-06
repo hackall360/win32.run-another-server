@@ -1,6 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert';
 import { ObjectManager } from '../kernel/executive/objectManager.js';
+import { createToken } from '../kernel/executive/security.js';
 
 // Test handle allocation and reference counting
 
@@ -18,9 +19,21 @@ test('object manager allocates handles and tracks references', () => {
 
 test('object manager enforces rights and ACL', () => {
   const om = new ObjectManager();
-  om.registerObject('\\secret', {}, { acl: { user: ['read'] } });
-  assert.throws(() => om.openHandle('\\secret', ['write'], 'user'));
-  const handle = om.openHandle('\\secret', ['read'], 'user');
+  om.registerObject('\\secret', {}, { acl: { user: ['read'], admin: ['write'] } });
+  const user = createToken('user');
+  assert.throws(() => om.openHandle('\\secret', ['write'], user));
+  const handle = om.openHandle('\\secret', ['read'], user);
+  assert.ok(handle);
+});
+
+test('token impersonation adjusts permissions', () => {
+  const om = new ObjectManager();
+  om.registerObject('\\topsecret', {}, { rights: [], acl: { admin: ['write'] } });
+  const user = createToken('user');
+  const admin = createToken('admin');
+  assert.throws(() => om.openHandle('\\topsecret', ['write'], user));
+  user.impersonate(admin);
+  const handle = om.openHandle('\\topsecret', ['write'], user);
   assert.ok(handle);
 });
 
