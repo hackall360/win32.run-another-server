@@ -1,11 +1,12 @@
 let nextTid = 1;
 
 export class Thread {
-  constructor(entry) {
+  constructor(entry, scheduler = null) {
     this.tid = nextTid++;
     this.entry = entry;
     this.state = 'ready';
     this.context = { registers: {}, sp: 0 };
+    this.scheduler = scheduler;
   }
 
   saveContext(ctx) {
@@ -23,5 +24,12 @@ export class Thread {
     } finally {
       this.state = 'terminated';
     }
+  }
+
+  wait(object, timeout) {
+    if (!this.scheduler) {
+      throw new Error('Thread has no scheduler');
+    }
+    return this.scheduler.blockThread(this, object, timeout);
   }
 }

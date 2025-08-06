@@ -3,11 +3,14 @@ import { systemToken } from './executive/security.js';
 import { timer } from '../src/lib/hal/index.js';
 import { logError } from '../system/eventLog.js';
 import { createCrashDump } from '../system/crashDump.js';
+import { KernelTimer } from './timer.js';
 
 export class Scheduler {
   constructor(timeSliceMs = 50) {
     this.table = new ProcessTable();
     this.readyQueue = [];
+    this.blockedQueue = [];
+    this.waitMap = new Map();
     this.current = null;
     this.timeSliceMs = timeSliceMs;
     this.timerId = null;
@@ -30,6 +33,71 @@ export class Scheduler {
     proc.state = 'ready';
     this.readyQueue.push(proc);
     this.readyQueue.sort((a, b) => b.priority - a.priority);
+  }
+
+  blockThread(thread, object, timeout) {
+    return new Promise(resolve => {
+      const proc = this.current;
+      thread.state = 'blocked';
+      if (proc) {
+        proc.state = 'waiting';
+      }
+      const objs = [];
+      if (object) {
+        if (Array.isArray(object)) {
+          objs.push(...object);
+        } else {
+          objs.push(object);
+        }
+      }
+      const record = { thread, process: proc, objects: objs, resolve };
+      this.blockedQueue.push(record);
+      for (const obj of objs) {
+        if (!this.waitMap.has(obj)) this.waitMap.set(obj, new Set());
+        this.waitMap.get(obj).add(record);
+      }
+      if (timeout !== undefined) {
+        const kt = new KernelTimer(timeout, this);
+        record.timer = kt;
+        record.objects.push(kt);
+        if (!this.waitMap.has(kt)) this.waitMap.set(kt, new Set());
+        this.waitMap.get(kt).add(record);
+      }
+      this.schedule();
+    });
+  }
+
+  onObjectSignaled(obj) {
+    const records = this.waitMap.get(obj);
+    if (!records) return;
+    for (const record of Array.from(records)) {
+      this.unblock(record, obj);
+    }
+  }
+
+  unblock(record, signaledObj) {
+    const idx = this.blockedQueue.indexOf(record);
+    if (idx !== -1) {
+      this.blockedQueue.splice(idx, 1);
+    }
+    for (const obj of record.objects) {
+      const set = this.waitMap.get(obj);
+      if (set) {
+        set.delete(record);
+        if (set.size === 0) this.waitMap.delete(obj);
+      }
+      if (obj instanceof KernelTimer) {
+        obj.cancel();
+      }
+    }
+    record.thread.state = 'ready';
+    if (record.process) {
+      record.process.state = 'ready';
+      this.enqueue(record.process);
+    }
+    if (record.resolve) {
+      record.resolve(signaledObj);
+    }
   }
 
   schedule() {
