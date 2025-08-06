@@ -1,5 +1,7 @@
 import { interruptController, powerManagement } from '../../src/lib/hal/index.js';
 import pnpManager from '../pnp/index.js';
+import { logError } from '../../system/eventLog.js';
+import { createCrashDump } from '../../system/crashDump.js';
 
 export class DeviceManager {
   constructor() {
@@ -41,11 +43,20 @@ export class DeviceManager {
   }
 
   loadDriverForDevice(device) {
-    const Factory = this.factories.get(device.type);
-    if (!Factory) return;
-    const driver = new Factory();
-    driver.name = device.id;
-    this.registerDriver(driver);
+    try {
+      const Factory = this.factories.get(device.type);
+      if (!Factory) {
+        const error = new Error(`No driver factory for ${device.type}`);
+        logError('DeviceManager.loadDriverForDevice', error, { device });
+        return;
+      }
+      const driver = new Factory();
+      driver.name = device.id;
+      this.registerDriver(driver);
+    } catch (err) {
+      logError('DeviceManager.loadDriverForDevice', err, { device });
+      createCrashDump('driver_load_failure', { device });
+    }
   }
 
   unloadDriver(deviceId) {
@@ -55,9 +66,18 @@ export class DeviceManager {
   sendRequest(name, request) {
     const driver = this.drivers.get(name);
     if (!driver || typeof driver.handleRequest !== 'function') {
-      throw new Error(`No driver registered for ${name}`);
+      const error = new Error(`No driver registered for ${name}`);
+      logError('DeviceManager.sendRequest', error, { name });
+      createCrashDump('missing_driver', { name, request });
+      throw error;
     }
-    return driver.handleRequest(request);
+    try {
+      return driver.handleRequest(request);
+    } catch (err) {
+      logError('DeviceManager.sendRequest', err, { name, request });
+      createCrashDump('driver_request_failure', { name, request });
+      throw err;
+    }
   }
 
   reset() {

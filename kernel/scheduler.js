@@ -1,6 +1,8 @@
 import { ProcessTable } from './process.js';
 import { systemToken } from './executive/security.js';
 import { timer } from '../src/lib/hal/index.js';
+import { logError } from '../system/eventLog.js';
+import { createCrashDump } from '../system/crashDump.js';
 
 export class Scheduler {
   constructor(timeSliceMs = 50) {
@@ -13,9 +15,15 @@ export class Scheduler {
   }
 
   createProcess(priority = 0, token = systemToken) {
-    const proc = this.table.createProcess(priority, token);
-    this.enqueue(proc);
-    return proc;
+    try {
+      const proc = this.table.createProcess(priority, token);
+      this.enqueue(proc);
+      return proc;
+    } catch (err) {
+      logError('Scheduler.createProcess', err, { priority });
+      createCrashDump('scheduler_create_process', { priority });
+      throw err;
+    }
   }
 
   enqueue(proc) {
@@ -25,16 +33,22 @@ export class Scheduler {
   }
 
   schedule() {
-    if (this.current && this.current.state === 'running') {
-      this.enqueue(this.current);
+    try {
+      if (this.current && this.current.state === 'running') {
+        this.enqueue(this.current);
+      }
+      const next = this.readyQueue.shift();
+      if (next) {
+        this.contextSwitch(next);
+      } else {
+        this.current = null;
+      }
+      return this.current;
+    } catch (err) {
+      logError('Scheduler.schedule', err);
+      createCrashDump('scheduler_schedule', { current: this.current });
+      throw err;
     }
-    const next = this.readyQueue.shift();
-    if (next) {
-      this.contextSwitch(next);
-    } else {
-      this.current = null;
-    }
-    return this.current;
   }
 
   contextSwitch(proc) {
