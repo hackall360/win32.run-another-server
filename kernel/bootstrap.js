@@ -12,6 +12,7 @@ import { syscall } from '../system/syscall.js';
 import { registerKernel32 } from '../system/services/kernel32.js';
 import { registerUser32 } from '../system/services/user32.js';
 import { registerGdi32 } from '../system/services/gdi32.js';
+import { registerPerfMon } from '../system/services/perfmon.js';
 
 /**
  * Bootstraps the kernel and core subsystems.
@@ -73,6 +74,7 @@ export async function bootstrap(options = {}) {
   registerKernel32(syscall, scheduler);
   registerUser32(syscall);
   registerGdi32(syscall);
+  registerPerfMon(syscall);
 
   // Launch initial system services
   for (const { name, service } of services) {
