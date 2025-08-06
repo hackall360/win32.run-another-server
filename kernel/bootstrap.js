@@ -8,6 +8,10 @@ import InputDriver from './io/drivers/input.js';
 import NetworkDriver from './io/drivers/network.js';
 import StorageDriver from './io/drivers/storage.js';
 import { serviceManager } from '../system/serviceManager.js';
+import { syscall } from '../system/syscall.js';
+import { registerKernel32 } from '../system/services/kernel32.js';
+import { registerUser32 } from '../system/services/user32.js';
+import { registerGdi32 } from '../system/services/gdi32.js';
 
 /**
  * Bootstraps the kernel and core subsystems.
@@ -64,6 +68,11 @@ export async function bootstrap(options = {}) {
   idleProcess.addThread(idleThread);
   scheduler.contextSwitch(idleProcess);
   scheduler.start();
+
+  // Register core system call services
+  registerKernel32(syscall, scheduler);
+  registerUser32(syscall);
+  registerGdi32(syscall);
 
   // Launch initial system services
   for (const { name, service } of services) {
