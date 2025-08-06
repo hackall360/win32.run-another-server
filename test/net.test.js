@@ -1,17 +1,20 @@
 import { test } from 'node:test';
 import assert from 'node:assert';
-import { NetworkInterface, registerInterface, _clear } from '../kernel/executive/net/ip.js';
-import { createSocket as createUDPSocket } from '../kernel/executive/net/udp.js';
-import { createServer, connect } from '../kernel/executive/net/tcp.js';
+import { NetworkInterface, NetworkSegment, registerInterface, resolveAddress, _clear } from '../kernel/executive/net/ip.js';
+import { createSocket as createUDPSocket, _clear as clearUDP } from '../kernel/executive/net/udp.js';
+import { createServer, connect, _clear as clearTCP } from '../kernel/executive/net/tcp.js';
 import socket from '../kernel/executive/net/socket.js';
 
 function setupAdapters() {
   _clear();
-  const a = new NetworkInterface('10.0.0.1');
-  const b = new NetworkInterface('10.0.0.2');
+  clearUDP();
+  clearTCP();
+  const seg = new NetworkSegment();
+  const a = new NetworkInterface('10.0.0.1', seg);
+  const b = new NetworkInterface('10.0.0.2', seg);
   registerInterface(a);
   registerInterface(b);
-  return { a, b };
+  return { a, b, seg };
 }
 
 test('UDP packets route between interfaces', async () => {
@@ -29,6 +32,8 @@ test('UDP packets route between interfaces', async () => {
 
   sockA.send('10.0.0.2', 5000, Buffer.from('hello'));
   await received;
+  sockA.close();
+  sockB.close();
 });
 
 test('TCP connection and data transfer', async () => {
@@ -73,4 +78,50 @@ test('socket.js provides unified API', async () => {
   assert.strictEqual(echo, 'echo');
   conn.close();
   serverSock.close();
+});
+
+test('ARP resolution finds local peers', () => {
+  const { a, b } = setupAdapters();
+  const resolved = resolveAddress(a.address, b.address);
+  assert.strictEqual(resolved, b);
+  assert.strictEqual(resolveAddress(a.address, '10.0.0.99'), null);
+});
+
+test('multi-hop packet delivery via routers', async () => {
+  _clear();
+  const seg1 = new NetworkSegment();
+  const seg2 = new NetworkSegment();
+  const seg3 = new NetworkSegment();
+
+  // Hosts
+  const hostA = new NetworkInterface('10.0.0.1', seg1);
+  const hostC = new NetworkInterface('10.0.2.1', seg3);
+
+  // Router 1 between seg1 and seg2
+  const r1 = { interfaces: [] };
+  const r1a = new NetworkInterface('10.0.0.254', seg1, r1);
+  const r1b = new NetworkInterface('10.0.1.1', seg2, r1);
+
+  // Router 2 between seg2 and seg3
+  const r2 = { interfaces: [] };
+  const r2a = new NetworkInterface('10.0.1.2', seg2, r2);
+  const r2b = new NetworkInterface('10.0.2.254', seg3, r2);
+
+  [hostA, hostC, r1a, r1b, r2a, r2b].forEach(registerInterface);
+
+  const sockC = createUDPSocket(hostC, 6000);
+  const sockA = createUDPSocket(hostA, 5000);
+
+  const received = new Promise((resolve) => {
+    sockC.on('message', (data, src) => {
+      assert.strictEqual(src, '10.0.0.1');
+      assert.strictEqual(data.toString(), 'multi');
+      resolve();
+    });
+  });
+
+  sockA.send('10.0.2.1', 6000, Buffer.from('multi'));
+  await received;
+  sockA.close();
+  sockC.close();
 });
