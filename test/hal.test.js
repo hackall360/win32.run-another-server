@@ -29,3 +29,16 @@ test('powerManagement tracks power state', () => {
   powerManagement.reboot();
   assert.strictEqual(powerManagement.getState(), 'rebooting');
 });
+
+test('powerManagement handles sleep and hibernate', () => {
+  powerManagement.sleep();
+  assert.strictEqual(powerManagement.getState(), 'sleep');
+  powerManagement.hibernate();
+  assert.strictEqual(powerManagement.getState(), 'hibernate');
+});
+
+test('powerManagement tracks per-device states', () => {
+  powerManagement.setDeviceState('dev1', 'off');
+  assert.strictEqual(powerManagement.getDeviceState('dev1'), 'off');
+  powerManagement.reset();
+});
