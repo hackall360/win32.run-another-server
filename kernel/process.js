@@ -1,10 +1,13 @@
+import { systemToken } from './executive/security.js';
+
 export class Process {
-  constructor(pid, priority = 0) {
+  constructor(pid, priority = 0, token = systemToken) {
     this.pid = pid;
     this.priority = priority;
     this.state = 'ready';
     this.threads = [];
     this.context = {};
+    this.token = token.getEffectiveToken();
   }
 
   addThread(thread) {
@@ -18,9 +21,12 @@ export class ProcessTable {
     this.nextPid = 1;
   }
 
-  createProcess(priority = 0) {
+  createProcess(priority = 0, token = systemToken) {
+    if (!token.hasPrivilege('createProcess')) {
+      throw new Error('Access denied');
+    }
     const pid = this.nextPid++;
-    const process = new Process(pid, priority);
+    const process = new Process(pid, priority, token);
     this.processes.set(pid, process);
     return process;
   }
