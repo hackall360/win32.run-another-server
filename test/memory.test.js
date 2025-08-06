@@ -27,14 +27,39 @@ test('virtual memory reads and writes', () => {
   assert.strictEqual(vm.readByte(addr), 0x2a);
 });
 
-// Test deallocation and page fault
+// Test deallocation and demand paging
 
-test('virtual memory deallocation triggers page fault', () => {
+test('virtual memory deallocation allocates on access', () => {
   const pm = new PhysicalMemory(32);
   const vm = new VirtualMemory(pm);
   const addr = vm.allocate(4096);
   vm.deallocate(addr, 4096);
-  assert.throws(() => vm.readByte(addr), /Page fault/);
+  vm.writeByte(addr, 0x11); // triggers on-demand allocation
+  assert.strictEqual(vm.readByte(addr), 0x11);
+});
+
+// Test permission enforcement
+
+test('permission violations are detected', () => {
+  const pm = new PhysicalMemory(32);
+  const vm = new VirtualMemory(pm);
+  const addr = vm.allocate(4096, { read: true, write: false });
+  assert.throws(() => vm.writeByte(addr, 1), /Permission/);
+});
+
+// Test lazy allocation via page fault handler
+
+test('pages are allocated on demand', () => {
+  const pm = new PhysicalMemory(32);
+  const vm = new VirtualMemory(pm);
+  const addr = vm.reserve(4096);
+  const vpage = Math.floor(addr / vm.pageSize);
+  let entry = vm.pageTable.get(vpage);
+  assert.ok(entry && !entry.present);
+  vm.writeByte(addr, 0x33); // should trigger allocation
+  entry = vm.pageTable.get(vpage);
+  assert.ok(entry.present && entry.frame !== null);
+  assert.strictEqual(vm.readByte(addr), 0x33);
 });
 
 // Kernel heap allocation
