@@ -12,9 +12,11 @@ export class NetworkDriver extends Driver {
     return `network:${request}`;
   }
 
-  handleIRQ(data) {
-    this.irqCount++;
-    this.lastIRQ = data;
+  handleIRQ(ctx, data) {
+    ctx.queueDpc(() => {
+      this.irqCount++;
+      this.lastIRQ = data;
+    });
   }
 }
 

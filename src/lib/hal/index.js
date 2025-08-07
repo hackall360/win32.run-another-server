@@ -13,6 +13,8 @@ export function writePort(port, value) {
   ports.set(port, value);
 }
 
+import { queueDpc } from '../../../kernel/dpc.js';
+
 export const interruptController = (() => {
   const handlers = new Map();
   return {
@@ -22,7 +24,7 @@ export const interruptController = (() => {
     trigger(irq, ...args) {
       const handler = handlers.get(irq);
       if (handler) {
-        handler(...args);
+        handler({ queueDpc }, ...args);
       }
     },
     clear(irq) {

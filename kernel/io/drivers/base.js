@@ -23,7 +23,7 @@ export class Driver {
   }
 
   // Handle an interrupt request
-  handleIRQ(_data) {
+  handleIRQ(_ctx, _data) {
     // To be implemented by subclasses
   }
 }

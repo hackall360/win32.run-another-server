@@ -12,7 +12,7 @@ export class DisplayDriver extends Driver {
     return `display:${request}`;
   }
 
-  handleIRQ(data) {
+  handleIRQ(_ctx, data) {
     this.irqCount++;
     this.lastIRQ = data;
   }

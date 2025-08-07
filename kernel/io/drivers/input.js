@@ -12,7 +12,7 @@ export class InputDriver extends Driver {
     return `input:${request}`;
   }
 
-  handleIRQ(data) {
+  handleIRQ(_ctx, data) {
     this.irqCount++;
     this.lastIRQ = data;
   }

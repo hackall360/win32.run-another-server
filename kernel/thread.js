@@ -26,10 +26,10 @@ export class Thread {
     }
   }
 
-  wait(object, timeout) {
+  wait(object, timeout, alertable = false) {
     if (!this.scheduler) {
       throw new Error('Thread has no scheduler');
     }
-    return this.scheduler.blockThread(this, object, timeout);
+    return this.scheduler.blockThread(this, object, timeout, alertable);
   }
 }

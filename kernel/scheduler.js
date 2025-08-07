@@ -4,6 +4,8 @@ import { timer } from '../src/lib/hal/index.js';
 import { logError } from '../system/eventLog.js';
 import { createCrashDump } from '../system/crashDump.js';
 import { KernelTimer } from './timer.js';
+import { hasPendingApcs, deliverApcs } from './apc.js';
+import { processDpcs } from './dpc.js';
 
 export class Scheduler {
   constructor(timeSliceMs = 50) {
@@ -35,8 +37,13 @@ export class Scheduler {
     this.readyQueue.sort((a, b) => b.priority - a.priority);
   }
 
-  blockThread(thread, object, timeout) {
+  blockThread(thread, object, timeout, alertable = false) {
     return new Promise(resolve => {
+      if (alertable && hasPendingApcs(thread)) {
+        deliverApcs(thread);
+        resolve('apc');
+        return;
+      }
       const proc = this.current;
       thread.state = 'blocked';
       if (proc) {
@@ -102,6 +109,7 @@ export class Scheduler {
 
   schedule() {
     try {
+      processDpcs();
       if (this.current && this.current.state === 'running') {
         this.enqueue(this.current);
       }
