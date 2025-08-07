@@ -12,7 +12,7 @@ export class StorageDriver extends Driver {
     return `storage:${request}`;
   }
 
-  handleIRQ(data) {
+  handleIRQ(_ctx, data) {
     this.irqCount++;
     this.lastIRQ = data;
   }

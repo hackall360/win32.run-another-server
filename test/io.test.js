@@ -6,6 +6,7 @@ import StorageDriver from '../kernel/io/drivers/storage.js';
 import NetworkDriver from '../kernel/io/drivers/network.js';
 import DisplayDriver from '../kernel/io/drivers/display.js';
 import InputDriver from '../kernel/io/drivers/input.js';
+import { Scheduler } from '../kernel/scheduler.js';
 
 function setup() {
   deviceManager.reset();
@@ -33,6 +34,8 @@ test('irq triggers driver handlers', () => {
   const network = new NetworkDriver();
   deviceManager.registerDriver(network);
   interruptController.trigger('IRQ_NETWORK', 'packet');
+  const sched = new Scheduler();
+  sched.schedule();
   assert.strictEqual(network.irqCount, 1);
   assert.strictEqual(network.lastIRQ, 'packet');
 });

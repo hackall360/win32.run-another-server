@@ -21,9 +21,9 @@ export class DeviceManager {
   registerDriver(driver) {
     this.drivers.set(driver.name, driver);
     if (driver.irq) {
-      interruptController.register(driver.irq, data => {
+      interruptController.register(driver.irq, (ctx, data) => {
         if (typeof driver.handleIRQ === 'function') {
-          driver.handleIRQ(data);
+          driver.handleIRQ(ctx, data);
         }
       });
     }
