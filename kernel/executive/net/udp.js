@@ -17,7 +17,7 @@ export class UDPSocket extends EventEmitter {
     adapter.on('packet', this._onPacket);
   }
 
-  send(destAddr, destPort, data) {
+  send(destAddr, destPort, data, options = {}) {
     if (!resolveAddress(this.adapter.address, destAddr)) {
       return;
     }
@@ -26,6 +26,9 @@ export class UDPSocket extends EventEmitter {
       destPort,
       data
     });
+    if (options.async && options.completionPort) {
+      setImmediate(() => options.completionPort.post(this, { operation: 'send' }));
+    }
   }
 
   close() {

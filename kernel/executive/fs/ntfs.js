@@ -49,25 +49,49 @@ export class NTFSFileSystem {
     return file;
   }
 
-  readFile(path) {
+  readFile(path, options = {}) {
     if (!this.mounted) throw new Error('Filesystem not mounted');
     const key = this._normalizePath(path);
-    return cacheManager.read(this, key, () => {
+    const exec = () => cacheManager.read(this, key, () => {
       const file = this._getFile(key);
       return file.data;
     });
+    if (options.async && options.completionPort) {
+      setImmediate(() => {
+        try {
+          const data = exec();
+          options.completionPort.post(path, { operation: 'readFile', data });
+        } catch (e) {
+          options.completionPort.post(path, { operation: 'readFile', error: e.message });
+        }
+      });
+      return { status: 'pending' };
+    }
+    return exec();
   }
 
-  writeFile(path, data) {
+  writeFile(path, data, options = {}) {
     if (!this.mounted) throw new Error('Filesystem not mounted');
     const key = this._normalizePath(path);
     const buf = Buffer.isBuffer(data) ? data : Buffer.from(data);
-    cacheManager.write(this, key, buf, d => {
+    const exec = () => cacheManager.write(this, key, buf, d => {
       const file = this._getFile(key, true);
       file.data = d;
       file.metadata.size = d.length;
       file.metadata.modified = new Date();
     });
+    if (options.async && options.completionPort) {
+      setImmediate(() => {
+        try {
+          exec();
+          options.completionPort.post(path, { operation: 'writeFile', bytes: buf.length });
+        } catch (e) {
+          options.completionPort.post(path, { operation: 'writeFile', error: e.message });
+        }
+      });
+      return { status: 'pending' };
+    }
+    exec();
   }
 
   getMetadata(path) {
@@ -123,21 +147,45 @@ export class NTFSFileSystem {
     return handle;
   }
 
-  read(handle) {
+  read(handle, options = {}) {
     const h = this.handleTable.get(handle);
     if (!h) throw new Error('Invalid handle');
-    return cacheManager.read(this, h.path, () => h.node.data);
+    const exec = () => cacheManager.read(this, h.path, () => h.node.data);
+    if (options.async && options.completionPort) {
+      setImmediate(() => {
+        try {
+          const data = exec();
+          options.completionPort.post(handle, { operation: 'read', data });
+        } catch (e) {
+          options.completionPort.post(handle, { operation: 'read', error: e.message });
+        }
+      });
+      return { status: 'pending' };
+    }
+    return exec();
   }
 
-  write(handle, data) {
+  write(handle, data, options = {}) {
     const h = this.handleTable.get(handle);
     if (!h) throw new Error('Invalid handle');
     const buf = Buffer.isBuffer(data) ? data : Buffer.from(data);
-    cacheManager.write(this, h.path, buf, d => {
+    const exec = () => cacheManager.write(this, h.path, buf, d => {
       h.node.data = d;
       h.node.metadata.size = d.length;
       h.node.metadata.modified = new Date();
     });
+    if (options.async && options.completionPort) {
+      setImmediate(() => {
+        try {
+          exec();
+          options.completionPort.post(handle, { operation: 'write', bytes: buf.length });
+        } catch (e) {
+          options.completionPort.post(handle, { operation: 'write', error: e.message });
+        }
+      });
+      return { status: 'pending' };
+    }
+    exec();
   }
 
   close(handle) {

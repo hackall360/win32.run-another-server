@@ -9,3 +9,4 @@ import {
 export { readPort, writePort, interruptController, timer, powerManagement };
 export { DriverStack } from './driverStack.js';
 export { IRP } from './irp.js';
+export { CompletionPort, createCompletionPort } from './completionPort.js';

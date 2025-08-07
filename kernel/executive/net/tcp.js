@@ -31,7 +31,7 @@ class TCPSocket extends EventEmitter {
     adapter.on('packet', this._onPacket);
   }
 
-  send(data) {
+  send(data, options = {}) {
     if (!this.connected) return;
     sendPacket(this.adapter.address, this.remoteAddr, 'TCP', {
       type: 'DATA',
@@ -39,6 +39,9 @@ class TCPSocket extends EventEmitter {
       destPort: this.remotePort,
       data
     });
+    if (options.async && options.completionPort) {
+      setImmediate(() => options.completionPort.post(this, { operation: 'send' }));
+    }
   }
 
   close() {
@@ -99,12 +102,15 @@ function isPortUsed(address, port) {
   return usedPorts.get(address)?.has(port);
 }
 
-export function connect(adapter, destAddr, destPort) {
+export function connect(adapter, destAddr, destPort, options = {}) {
   if (!resolveAddress(adapter.address, destAddr)) {
     throw new Error('Host unreachable');
   }
   const localPort = allocPort(adapter.address);
   const sock = new TCPSocket(adapter, localPort, destAddr, destPort);
+  if (options.completionPort) {
+    sock.on('connect', () => options.completionPort.post(sock, { operation: 'connect' }));
+  }
   sendPacket(adapter.address, destAddr, 'TCP', {
     type: 'CONNECT',
     srcPort: localPort,
