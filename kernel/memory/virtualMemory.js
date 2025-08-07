@@ -26,7 +26,42 @@ export class VirtualMemory {
     // file-backed mappings: key -> { frame, refCount, fs, path, offset, dirty }
     this.fileMappings = new Map();
 
+    // LRU tracker: virtual page -> true (Map preserves insertion order)
+    this.lru = new Map();
+
     this.pageFaultHandler = this.defaultPageFaultHandler.bind(this);
+  }
+
+  _touch(vpage) {
+    const entry = this.pageTable.get(vpage);
+    if (!entry || !entry.present) return;
+    this.lru.delete(vpage);
+    this.lru.set(vpage, true);
+  }
+
+  _evictLeastRecentlyUsed() {
+    const iterator = this.lru.keys();
+    const next = iterator.next();
+    if (next.done) {
+      const error = new Error('Out of physical memory');
+      logError('VirtualMemory._evictLeastRecentlyUsed', error);
+      createCrashDump('out_of_physical_memory');
+      throw error;
+    }
+    const vpage = next.value;
+    this.swapOut(vpage * this.pageSize);
+  }
+
+  _allocateFrame() {
+    try {
+      return this.physical.allocateFrame();
+    } catch (err) {
+      if (err.message === 'Out of physical memory') {
+        this._evictLeastRecentlyUsed();
+        return this.physical.allocateFrame();
+      }
+      throw err;
+    }
   }
 
   /**
@@ -39,7 +74,7 @@ export class VirtualMemory {
 
     // No entry exists - allocate a new page with default perms
     if (!entry) {
-      const frame = this.physical.allocateFrame();
+      const frame = this._allocateFrame();
       entry = {
         frame,
         present: true,
@@ -51,12 +86,13 @@ export class VirtualMemory {
         frame * this.pageSize,
         (frame + 1) * this.pageSize
       );
+      this._touch(vpage);
       return;
     }
 
     // Entry exists but not present - allocate frame and load
     if (!entry.present) {
-      const frame = this.physical.allocateFrame();
+      const frame = this._allocateFrame();
       entry.frame = frame;
       entry.present = true;
 
@@ -78,6 +114,7 @@ export class VirtualMemory {
           (frame + 1) * this.pageSize
         );
       }
+      this._touch(vpage);
       return;
     }
 
@@ -95,13 +132,14 @@ export class VirtualMemory {
     const pages = Math.ceil(size / this.pageSize);
     const startPage = this.nextVirtualPage;
     for (let i = 0; i < pages; i++) {
-      const frame = this.physical.allocateFrame();
+      const frame = this._allocateFrame();
       const vpage = startPage + i;
       this.pageTable.set(vpage, {
         frame,
         present: true,
         perms: normalizePerms(perms)
       });
+      this._touch(vpage);
     }
     this.nextVirtualPage += pages;
     return startPage * this.pageSize;
@@ -141,6 +179,7 @@ export class VirtualMemory {
       this.swapArea.set(vpage, entry.swap);
     }
     this.pageTable.set(vpage, entry);
+    if (entry.present) this._touch(vpage);
   }
 
   /**
@@ -158,6 +197,7 @@ export class VirtualMemory {
         }
         this.pageTable.delete(vpage);
         this.swapArea.delete(vpage);
+        this.lru.delete(vpage);
       }
     }
   }
@@ -196,6 +236,7 @@ export class VirtualMemory {
       this.swapArea.set(vpage, buffer);
       this.physical.freeFrame(entry.frame);
       entry.frame = null;
+      this.lru.delete(vpage);
     }
   }
 
@@ -259,7 +300,7 @@ export class VirtualMemory {
         frame = ref.frame;
         ref.refCount++;
       } else {
-        frame = this.physical.allocateFrame();
+        frame = this._allocateFrame();
         this.physical.memory.fill(
           0,
           frame * this.pageSize,
@@ -294,6 +335,7 @@ export class VirtualMemory {
         entry.file = { fs, path, offset: fileOffset, shared: false, dirty: false };
       }
       this.pageTable.set(vpage, entry);
+      this._touch(vpage);
     }
     this.nextVirtualPage += pages;
     return startPage * this.pageSize;
@@ -323,6 +365,7 @@ export class VirtualMemory {
       }
       this.pageTable.delete(vpage);
       this.swapArea.delete(vpage);
+      this.lru.delete(vpage);
     }
   }
 
@@ -351,7 +394,7 @@ export class VirtualMemory {
       if (entry.file.key) {
         const ref = this.fileMappings.get(entry.file.key);
         if (ref && ref.refCount > 1) {
-          const newFrame = this.physical.allocateFrame();
+          const newFrame = this._allocateFrame();
           this.physical.memory.copy(
             this.physical.memory,
             newFrame * this.pageSize,
@@ -374,18 +417,21 @@ export class VirtualMemory {
         entry.file.dirty = true;
       }
     }
+    this._touch(vpage);
     return entry.frame * this.pageSize + offset;
   }
 
   readByte(virtualAddress) {
     const phys = this.translate(virtualAddress, 'read');
     if (phys === null) return undefined;
+    this._touch(Math.floor(virtualAddress / this.pageSize));
     return this.physical.readByte(phys);
   }
 
   writeByte(virtualAddress, value) {
     const phys = this.translate(virtualAddress, 'write');
     if (phys === null) return;
+    this._touch(Math.floor(virtualAddress / this.pageSize));
     this.physical.writeByte(phys, value);
   }
 }
