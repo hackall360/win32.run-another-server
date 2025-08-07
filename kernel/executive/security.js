@@ -2,12 +2,23 @@ export class Token {
   constructor(sid, groups = [], privileges = []) {
     this.sid = sid;
     this.groups = new Set(groups);
-    this.privileges = new Set(privileges);
+    // Store privileges as an array for inspection while using an internal Set
+    // for efficient lookups.
+    this.privileges = Array.from(privileges);
+    this._privSet = new Set(privileges);
     this.impersonation = null;
   }
 
   hasPrivilege(priv) {
-    return this.getEffectiveToken().privileges.has(priv);
+    return this.getEffectiveToken()._privSet.has(priv);
+  }
+
+  addPrivilege(priv) {
+    const effective = this._privSet;
+    if (!effective.has(priv)) {
+      effective.add(priv);
+      this.privileges.push(priv);
+    }
   }
 
   impersonate(token) {

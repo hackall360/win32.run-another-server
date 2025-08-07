@@ -1,4 +1,5 @@
 import { checkAccess, systemToken } from './security.js';
+import { eventLog } from '../../system/eventLog.js';
 
 class Namespace {
   constructor() {
@@ -8,10 +9,11 @@ class Namespace {
 }
 
 export class ObjectManager {
-  constructor() {
+  constructor(auditLog = eventLog) {
     this.root = new Namespace();
     this.handleTable = new Map(); // handle -> { entry, rights }
     this.nextHandle = 1;
+    this.auditLog = auditLog;
   }
 
   _split(path) {
@@ -69,30 +71,42 @@ export class ObjectManager {
   }
 
   openHandle(path, desiredRights = ['read'], token = systemToken) {
-    const entry = this._getEntry(path);
-    if (!checkAccess(token, entry, desiredRights)) {
-      throw new Error('Access denied');
+    try {
+      const entry = this._getEntry(path);
+      if (!checkAccess(token, entry, desiredRights)) {
+        throw new Error('Access denied');
+      }
+      const handle = this.nextHandle++;
+      this.handleTable.set(handle, {
+        entry,
+        rights: new Set(desiredRights)
+      });
+      entry.refCount++;
+      this.auditLog?.info('openHandle success', { path, desiredRights, handle, sid: token.sid });
+      return handle;
+    } catch (error) {
+      this.auditLog?.error('openHandle failure', error, { path, desiredRights, sid: token?.sid });
+      throw error;
     }
-    const handle = this.nextHandle++;
-    this.handleTable.set(handle, {
-      entry,
-      rights: new Set(desiredRights)
-    });
-    entry.refCount++;
-    return handle;
   }
 
   getObject(handle, requiredRights = []) {
-    const h = this.handleTable.get(handle);
-    if (!h) {
-      throw new Error('Invalid handle');
-    }
-    for (const r of requiredRights) {
-      if (!h.rights.has(r)) {
-        throw new Error('Access denied');
+    try {
+      const h = this.handleTable.get(handle);
+      if (!h) {
+        throw new Error('Invalid handle');
       }
+      for (const r of requiredRights) {
+        if (!h.rights.has(r)) {
+          throw new Error('Access denied');
+        }
+      }
+      this.auditLog?.info('getObject success', { handle, requiredRights });
+      return h.entry.object;
+    } catch (error) {
+      this.auditLog?.error('getObject failure', error, { handle, requiredRights });
+      throw error;
     }
-    return h.entry.object;
   }
 
   closeHandle(handle) {

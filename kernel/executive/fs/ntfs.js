@@ -1,9 +1,10 @@
 import { cacheManager } from './cacheManager.js';
 import { normalizePath, splitPath } from './pathUtils.js';
 import { systemToken } from '../security.js';
+import { eventLog } from '../../../system/eventLog.js';
 
 export class NTFSFileSystem {
-  constructor() {
+  constructor(auditLog = eventLog) {
     this.volumeId = `ntfs-${Math.random().toString(16).slice(2)}`;
     this.mounted = false;
     this.root = { type: 'dir', children: new Map(), security: this._createSecurityDescriptor(systemToken.sid) };
@@ -18,6 +19,7 @@ export class NTFSFileSystem {
     this.root.children.set('$journal', this.journalNode);
     this.handleTable = new Map(); // handle -> { node, path, rights, token }
     this.nextHandle = 1;
+    this.auditLog = auditLog;
   }
 
   mount() {
@@ -39,6 +41,10 @@ export class NTFSFileSystem {
   }
 
   _checkAccess(node, token, rights = []) {
+    if (token.hasPrivilege && token.hasPrivilege('SeBackupPrivilege')) {
+      this.auditLog?.info('ACL override', { sid: token.sid, rights });
+      return true;
+    }
     if (token.sid === node.security.owner) return true;
     const sids = [token.sid, ...(token.groups || []), 'everyone'];
     for (const sid of sids) {
