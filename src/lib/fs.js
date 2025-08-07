@@ -12,7 +12,6 @@ import {
 import { recycle_bin_id, protected_items, SortOptions, SortOrders } from './system';
 import * as utils from './utils';
 import short from 'short-uuid';
-import * as util from './utils';
 import * as idb from 'idb-keyval';
 import * as finder from './finder';
 import { Buffer } from 'buffer';
@@ -342,8 +341,8 @@ export async function save_file(fs_id, file){
 
 export async function save_file_as(basename, ext, file, parent_id, new_id=null){
     ext = ext.toLowerCase();
-    if(util.extname(basename) == ext){
-        basename = util.basename(basename, ext);
+    if(utils.extname(basename) == ext){
+        basename = utils.basename(basename, ext);
     }
 
     let url = short.generate();
