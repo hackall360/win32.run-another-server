@@ -77,8 +77,8 @@ export async function bootstrap(options = {}) {
   registerPerfMon(syscall);
 
   // Launch initial system services
-  for (const { name, service } of services) {
-    serviceManager.register(name, service);
+  for (const { name, service, deps, restart } of services) {
+    serviceManager.register(name, service, { deps, restart });
   }
   for (const { name } of services) {
     await serviceManager.start(name);
