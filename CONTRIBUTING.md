@@ -1,6 +1,6 @@
 # Contributing to win32.run
 
-Thank you for considering a contribution to **win32.run**! The project is under active development, and we welcome bug reports, feature requests, documentation improvements, and pull requests.
+Thank you for considering a contribution to **win32.run**! The project is under active development, and we welcome bug reports, feature requests, documentation improvements, and pull requests. For an overview of the codebase, see the [docs](docs/README.md).
 
 ## Getting Started
 
