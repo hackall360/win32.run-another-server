@@ -1,4 +1,4 @@
-import { syscall } from '../../system/syscall.js';
+import { syscall, THREAD_SYSCALLS } from '../../system/syscall.js';
 
 export const KERNEL32_SERVICES = {
   CREATE_PROCESS: 0x1000,
@@ -9,7 +9,11 @@ export const KERNEL32_SERVICES = {
   CREATE_PIPE: 0x1100,
   CONNECT_LPC_PORT: 0x1101,
   CREATE_MAILSLOT: 0x1102,
-  CREATE_SHARED_MEMORY: 0x1103
+  CREATE_SHARED_MEMORY: 0x1103,
+  CREATE_THREAD: THREAD_SYSCALLS.CREATE_THREAD,
+  SUSPEND_THREAD: THREAD_SYSCALLS.SUSPEND_THREAD,
+  RESUME_THREAD: THREAD_SYSCALLS.RESUME_THREAD,
+  EXIT_THREAD: THREAD_SYSCALLS.EXIT_THREAD
 };
 
 // Basic console handle for userland apps. In a real system this would
@@ -55,4 +59,36 @@ export function CreateMailslot(name, options) {
 
 export function CreateSharedMemory(name, size, options) {
   return syscall.invoke(KERNEL32_SERVICES.CREATE_SHARED_MEMORY, name, size, options);
+}
+
+export function CreateThread(
+  lpThreadAttributes,
+  dwStackSize,
+  lpStartAddress,
+  lpParameter,
+  dwCreationFlags = 0,
+  lpThreadId = null
+) {
+  const tid = syscall.invoke(
+    KERNEL32_SERVICES.CREATE_THREAD,
+    lpStartAddress,
+    lpParameter,
+    dwCreationFlags
+  );
+  if (lpThreadId) {
+    lpThreadId.value = tid;
+  }
+  return tid;
+}
+
+export function SuspendThread(thread) {
+  return syscall.invoke(KERNEL32_SERVICES.SUSPEND_THREAD, thread);
+}
+
+export function ResumeThread(thread) {
+  return syscall.invoke(KERNEL32_SERVICES.RESUME_THREAD, thread);
+}
+
+export function ExitThread(code = 0) {
+  return syscall.invoke(KERNEL32_SERVICES.EXIT_THREAD, code);
 }

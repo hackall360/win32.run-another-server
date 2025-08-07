@@ -1,3 +1,10 @@
+export const THREAD_SYSCALLS = {
+  CREATE_THREAD: 0x1200,
+  SUSPEND_THREAD: 0x1201,
+  RESUME_THREAD: 0x1202,
+  EXIT_THREAD: 0x1203
+};
+
 export class SyscallDispatcher {
   constructor() {
     this.serviceTable = new Map();

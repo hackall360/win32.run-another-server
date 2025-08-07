@@ -1,7 +1,7 @@
 import { PhysicalMemory } from './memory/physicalMemory.js';
 import { VirtualMemory } from './memory/virtualMemory.js';
 import { Scheduler } from './scheduler.js';
-import { Thread } from './thread.js';
+import { Thread, registerThreadSyscalls } from './thread.js';
 import { deviceManager } from './io/deviceManager.js';
 import DisplayDriver from './io/drivers/display.js';
 import InputDriver from './io/drivers/input.js';
@@ -72,6 +72,7 @@ export async function bootstrap(options = {}) {
 
   // Register core system call services
   registerKernel32(syscall, scheduler);
+  registerThreadSyscalls(syscall, scheduler);
   registerUser32(syscall);
   registerGdi32(syscall);
   registerPerfMon(syscall);
