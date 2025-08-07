@@ -16,6 +16,15 @@ import * as idb from 'idb-keyval';
 import * as finder from './finder';
 import { Buffer } from 'buffer';
 
+const fsLoggingEnabled =
+  (typeof process !== 'undefined' && process.env?.FS_LOGGING === 'true') ||
+  (typeof import.meta !== 'undefined' && import.meta.env?.VITE_FS_LOGGING === 'true');
+
+const logger = {
+  debug: (...args) => fsLoggingEnabled && console.debug('[fs]', ...args),
+  warn: (...args) => fsLoggingEnabled && console.warn('[fs]', ...args)
+};
+
 export function search_fs(query){
     if(utils.is_empty(query)) return [];
     query = query.toLowerCase();
@@ -48,26 +57,26 @@ export function run_command(command){
 export function copy(){
     setClipboardOp('copy');
     setClipboard(selectingItems());
-    console.log('copy');
+    logger.debug('copy');
 }
 
 export function cut(){
     setClipboardOp('cut');
     setClipboard(selectingItems());
-    console.log('cut');
+    logger.debug('cut');
 }
 
 export function paste(id, new_id=null){
-    console.log('paste to', id);
-    console.log('clipboard_op', clipboardOp());
-    console.log(hardDrive()[id]);
+    logger.debug('paste to', id);
+    logger.debug('clipboard_op', clipboardOp());
+    logger.debug(hardDrive()[id]);
     if(hardDrive()[id] == null || hardDrive()[id].type == 'file'){
-        console.log('target is not a dir');
+        logger.warn('target is not a dir');
         return;
     }
 
     if(clipboard().length == 0){
-        console.log('clipboard is empty');
+        logger.warn('clipboard is empty');
         return;
     }
 
@@ -85,7 +94,7 @@ export function paste(id, new_id=null){
 
 export function del_fs(id){
     if(protected_items.includes(id)){
-        console.log(id, 'is protected');
+        logger.warn(id, 'is protected');
         return;
     }
     let obj = hardDrive()[id];
@@ -94,7 +103,7 @@ export function del_fs(id){
         ...obj.children
     ]
     if(hardDrive()[obj.parent] != null){
-        console.log('delete from parent', obj.parent)
+        logger.debug('delete from parent', obj.parent)
         setHardDrive(data => {
             data[obj.parent].children = data[obj.parent].children.filter(el => el != obj.id);
             data[obj.parent].date_modified = (new Date()).getTime();
@@ -129,7 +138,7 @@ function dir_contains_dir(a, b){
 }
 export function clone_fs(obj_current_id, parent_id, new_id=null){
     if(dir_contains_dir(obj_current_id, parent_id)){
-        console.log('cannot paste item onto itself');
+        logger.warn('cannot paste item onto itself');
         return;
     }
 
@@ -156,7 +165,7 @@ export function clone_fs(obj_current_id, parent_id, new_id=null){
     obj.name = basename + obj.ext;
     
     //backup children
-    console.log(obj)
+    logger.debug(obj)
     let children = [...obj.children];
     obj.children = [];
 
@@ -165,7 +174,7 @@ export function clone_fs(obj_current_id, parent_id, new_id=null){
         data[obj.id] = obj;
         return data;
     });
-    console.log('cloning', obj.id)
+    logger.debug('cloning', obj.id)
 
     setHardDrive(data => {
         data[parent_id].children.push(obj.id);
@@ -226,7 +235,7 @@ export async function new_fs_item(type, ext, seedname, parent_id, file=null){
         item.size = Math.ceil(file.size/1024);
 
     } else if(type == 'file'){
-        console.log('fetch empty file')
+        logger.debug('fetch empty file')
         file = await file_from_url(`/empty/empty${item.ext}`, item.name);
         await idb.set(item.url, file);
         item.size = Math.ceil(file.size/1024);
@@ -322,7 +331,7 @@ export function get_path(id){
 
 export async function save_file(fs_id, file){
     if(hardDrive()[fs_id] == null){
-        console.log(fs_id, 'not exist');
+        logger.warn(fs_id, 'not exist');
         return;
     }
     let url = short.generate();
@@ -400,7 +409,7 @@ export async function get_file(id){
         file = await file_from_url(fs_item.url);
     } else if(fs_item.storage_type == 'local') {
         file = await idb.get(fs_item.url);
-        console.log(file);
+        logger.debug(file);
     }
     file = new File([file], fs_item.name, {type: file.type})
     return file;
@@ -438,7 +447,7 @@ export async function array_buffer_from_url(url){
 
 export async function buffer_from_url(url){
     let array_buffer = await array_buffer_from_url(url);
-    console.log(array_buffer)
+    logger.debug(array_buffer)
     return Buffer.from(array_buffer);
 }
 
