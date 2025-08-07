@@ -1,9 +1,28 @@
 import { EventEmitter } from 'events';
 
+// Shared utility to schedule periodic cleanup of timestamped map entries
+function scheduleCleanup(map, ttl) {
+  const timer = setInterval(() => {
+    const now = Date.now();
+    for (const [key, entry] of map) {
+      if (now - entry.ts > ttl) {
+        map.delete(key);
+      }
+    }
+  }, ttl);
+  timer.unref();
+  return timer;
+}
+
+// Default TTL for ARP and route cache entries (ms)
+const DEFAULT_TTL = 30_000;
+
 // Network segment containing an ARP table mapping IP -> interface
 export class NetworkSegment {
-  constructor() {
+  constructor({ arpTTL = DEFAULT_TTL } = {}) {
+    this.arpTTL = arpTTL;
     this.arp = new Map();
+    this._cleanup = scheduleCleanup(this.arp, this.arpTTL);
   }
 }
 
@@ -20,7 +39,7 @@ export class NetworkInterface extends EventEmitter {
     this.segment = segment;
     this.device = device;
     device.interfaces.push(this);
-    segment.arp.set(address, this);
+    arpSet(segment, address, this);
   }
 
   send(dest, protocol, payload) {
@@ -30,10 +49,18 @@ export class NetworkInterface extends EventEmitter {
 
 const interfaces = new Map();
 
+// Cache for resolved next-hop lookups
+const routeCache = new Map();
+scheduleCleanup(routeCache, DEFAULT_TTL);
+
+function arpSet(segment, address, iface) {
+  segment.arp.set(address, { iface, ts: Date.now() });
+}
+
 export function registerInterface(iface) {
   interfaces.set(iface.address, iface);
   if (iface.segment) {
-    iface.segment.arp.set(iface.address, iface);
+    arpSet(iface.segment, iface.address, iface);
   }
 }
 
@@ -43,6 +70,13 @@ export function unregisterInterface(address) {
     iface.segment.arp.delete(address);
   }
   interfaces.delete(address);
+
+  // remove any cached routes involving this interface
+  for (const [key, entry] of routeCache) {
+    if (entry.iface.address === address || key.startsWith(`${address}->`) || key.endsWith(`->${address}`)) {
+      routeCache.delete(key);
+    }
+  }
 }
 
 // Resolve a destination IP from the perspective of a source interface.
@@ -51,7 +85,20 @@ export function unregisterInterface(address) {
 export function resolveAddress(srcAddr, destAddr, visitedSegments = new Set(), visitedDevices = new Set()) {
   const srcIface = interfaces.get(srcAddr);
   if (!srcIface) return null;
-  return _resolveFrom(srcIface, destAddr, visitedSegments, visitedDevices);
+
+  const key = `${srcAddr}->${destAddr}`;
+  const now = Date.now();
+  const cached = routeCache.get(key);
+  if (cached && now - cached.ts <= DEFAULT_TTL) {
+    cached.ts = now; // refresh TTL
+    return cached.iface;
+  }
+
+  const res = _resolveFrom(srcIface, destAddr, visitedSegments, visitedDevices);
+  if (res) {
+    routeCache.set(key, { iface: res, ts: now });
+  }
+  return res;
 }
 
 function _resolveFrom(iface, destAddr, visitedSegments, visitedDevices) {
@@ -60,9 +107,13 @@ function _resolveFrom(iface, destAddr, visitedSegments, visitedDevices) {
   visitedSegments.add(segment);
 
   const direct = segment.arp.get(destAddr);
-  if (direct) return direct;
+  if (direct) {
+    direct.ts = Date.now();
+    return direct.iface;
+  }
 
-  for (const segIface of segment.arp.values()) {
+  for (const entry of segment.arp.values()) {
+    const segIface = entry.iface;
     const device = segIface.device;
     if (!device || visitedDevices.has(device)) continue;
     visitedDevices.add(device);
@@ -86,6 +137,7 @@ export function sendPacket(src, dest, protocol, payload) {
 export function _clear() {
   interfaces.clear();
   defaultSegment.arp.clear();
+  routeCache.clear();
 }
 
-export { interfaces };
+export { interfaces, routeCache as _routeCache };

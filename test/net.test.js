@@ -115,6 +115,29 @@ test('ARP resolution finds local peers', () => {
   assert.strictEqual(resolveAddress(a.address, '10.0.0.99'), null);
 });
 
+test('ARP entries expire after TTL', async () => {
+  _clear();
+  const seg = new NetworkSegment({ arpTTL: 5 });
+  const a = new NetworkInterface('10.0.0.1', seg);
+  registerInterface(a);
+  assert.ok(seg.arp.has('10.0.0.1'));
+  await new Promise((r) => setTimeout(r, 15));
+  assert.ok(!seg.arp.has('10.0.0.1'));
+});
+
+test('resolveAddress caches next-hop lookups', () => {
+  const { a, b } = setupAdapters();
+  ip._routeCache.clear();
+  const key = `${a.address}->${b.address}`;
+  const first = resolveAddress(a.address, b.address);
+  assert.ok(ip._routeCache.has(key));
+  const firstTs = ip._routeCache.get(key).ts;
+  const second = resolveAddress(a.address, b.address);
+  const secondTs = ip._routeCache.get(key).ts;
+  assert.strictEqual(second, first);
+  assert.ok(secondTs >= firstTs);
+});
+
 test('multi-hop packet delivery via routers', async () => {
   _clear();
   const seg1 = new NetworkSegment();
