@@ -2,6 +2,7 @@ import { interruptController, powerManagement } from '../../src/lib/hal/index.js
 import pnpManager from '../pnp/index.js';
 import { logError } from '../../system/eventLog.js';
 import { createCrashDump } from '../../system/crashDump.js';
+import AudioDriver from './drivers/audio.js';
 
 export class DeviceManager {
   constructor() {
@@ -92,4 +93,5 @@ export class DeviceManager {
 }
 
 export const deviceManager = new DeviceManager();
+deviceManager.registerDriver(new AudioDriver());
 export default deviceManager;
