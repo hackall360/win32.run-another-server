@@ -1,7 +1,7 @@
 ### Windows XP in the browser, with a File System, programs, XP-style File Picker and Saver dialogs, 3rd-party program, etc.
 ## [🍭 win32.run](https://win32.run)
 
-**win32.run is actively developed.** We welcome issues, feature requests, and pull requests—see [CONTRIBUTING.md](CONTRIBUTING.md) to get involved.
+**win32.run is actively developed.** We welcome issues, feature requests, and pull requests—see [CONTRIBUTING.md](CONTRIBUTING.md) to get involved and browse the [docs](docs/README.md) for details about the project.
 
 ![License Unlicense](https://badgen.net/badge/license/Unlicense/green)
 [![css tailwind](https://badgen.net/badge/css/tailwind/blue)](https://github.com/tailwindlabs/tailwindcss)
@@ -85,9 +85,7 @@ Put the build output (`dist` and `.solid`), `package.json`, and `package-lock.js
 
 Finally, run `npm start` (or use a process manager like `pm2 start .solid/server/server.js`) to serve win32 at `localhost:3000`.
 # Documentation
-If you're interested in expanding or customizing win32.run, please have a look at its documentation. Contributions and suggestions for improving the docs are always welcome.
-
-[![Please visit docs.win32.run](https://img.shields.io/badge/view-Documentation-blue?style=for-the-badge)](https://docs.win32.run)
+If you're interested in expanding or customizing win32.run, take a look at the documentation stored in the [docs](docs/README.md) directory. Contributions and suggestions for improving the docs are always welcome.
 
 ## Contributing
 

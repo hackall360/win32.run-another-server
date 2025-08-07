@@ -39,7 +39,7 @@ class Win32 {
      * ```
      * Specify an empty array [] to accept any extension
      * @param {boolean} multiple Whether to accept multiple or single file. Default to true.
-     * @returns {Promise<[Object]>} an array of win32 files. See {@link https://docs.win32.run/3rd-party-apps/pick-files#returns Docs}
+     * @returns {Promise<[Object]>} an array of win32 files. See docs/api.md#pick_files for details.
      */
     async pick_files(desc = '', exts = [], multiple = true) {
         console.log(this.parent_origin)
@@ -98,7 +98,7 @@ class Win32 {
      *  {desc: 'Bitmap', mime: 'image/bmp', ext: '.bmp'},
      * ]
      * ```
-     * See {@link https://docs.win32.run Docs} for more details.
+     * See docs/api.md for more details.
      * @returns {Promise<String>} id of the saved file, which later can be used to retrieve said file info with this.get_file(id)
      */
     async save_file_as(file, types) {
@@ -124,7 +124,7 @@ class Win32 {
     /**
      * @description Get a file on win32.run by its id.
      * @param {String} id id of the file
-     * @returns {Promise<Object>} a win32 file object. See {@link https://docs.win32.run/3rd-party-apps/pick-files#returns Docs}
+     * @returns {Promise<Object>} a win32 file object. See docs/api.md#pick_files for details.
      */
     async get_file(id) {
         this.send({
