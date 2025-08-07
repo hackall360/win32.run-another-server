@@ -7,6 +7,7 @@ import DisplayDriver from './io/drivers/display.js';
 import InputDriver from './io/drivers/input.js';
 import NetworkDriver from './io/drivers/network.js';
 import StorageDriver from './io/drivers/storage.js';
+import { registerWinmm } from '../system/services/winmm.js';
 import { serviceManager } from '../system/serviceManager.js';
 import { syscall } from '../system/syscall.js';
 import { registerKernel32 } from '../system/services/kernel32.js';
@@ -76,6 +77,7 @@ export async function bootstrap(options = {}) {
   registerUser32(syscall);
   registerGdi32(syscall);
   registerPerfMon(syscall);
+  registerWinmm(syscall);
 
   // Launch initial system services
   for (const { name, service, deps, restart } of services) {
