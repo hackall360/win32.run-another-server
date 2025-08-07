@@ -33,6 +33,20 @@ export const interruptController = (() => {
   };
 })();
 
+export const ipi = (() => {
+  return {
+    register(cpuId, handler) {
+      interruptController.register(`ipi-${cpuId}`, handler);
+    },
+    send(cpuId, ...args) {
+      interruptController.trigger(`ipi-${cpuId}`, ...args);
+    },
+    clear(cpuId) {
+      interruptController.clear(`ipi-${cpuId}`);
+    }
+  };
+})();
+
 export const timer = {
   setTimeout: (fn, ms) => setTimeout(fn, ms),
   clearTimeout: id => clearTimeout(id)
@@ -75,5 +89,6 @@ export default {
   writePort,
   interruptController,
   timer,
-  powerManagement
+  powerManagement,
+  ipi
 };

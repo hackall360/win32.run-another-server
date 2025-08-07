@@ -3,6 +3,7 @@ import assert from 'node:assert';
 import { Scheduler, Mutex, Semaphore, Spinlock } from '../kernel/scheduler.js';
 import { Thread } from '../kernel/thread.js';
 import { KernelEvent } from '../kernel/event.js';
+import { systemToken } from '../kernel/executive/security.js';
 
 // Test that scheduler prioritizes higher priority processes
 
@@ -157,4 +158,21 @@ test('wait times out when no object signaled', async () => {
   const elapsed = Date.now() - start;
   assert.ok(elapsed >= 10);
   assert.strictEqual(t.state, 'ready');
+});
+
+test('load balances processes across CPUs', () => {
+  const sched = new Scheduler(50, 2);
+  const p1 = sched.createProcess(1);
+  const p2 = sched.createProcess(1);
+  assert.notStrictEqual(p1.cpu.id, p2.cpu.id);
+});
+
+test('respects thread preferred CPU affinity', () => {
+  const sched = new Scheduler(50, 2);
+  const proc = sched.table.createProcess(1, systemToken);
+  const t = new Thread(() => {}, sched);
+  t.preferredCpu = 1;
+  proc.addThread(t);
+  sched.enqueue(proc);
+  assert.strictEqual(proc.cpu.id, 1);
 });
