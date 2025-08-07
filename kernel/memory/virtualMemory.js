@@ -23,6 +23,9 @@ export class VirtualMemory {
     // swapArea stores page data when swapped out
     this.swapArea = new Map(); // vpage -> Buffer
 
+    // file-backed mappings: key -> { frame, refCount, fs, path, offset, dirty }
+    this.fileMappings = new Map();
+
     this.pageFaultHandler = this.defaultPageFaultHandler.bind(this);
   }
 
@@ -196,6 +199,133 @@ export class VirtualMemory {
     }
   }
 
+  _writeBack(fs, path, offset, data) {
+    const file = Buffer.from(fs.readFile(path));
+    const end = offset + data.length;
+    let buf = file;
+    if (end > file.length) {
+      buf = Buffer.alloc(end);
+      file.copy(buf, 0, 0, file.length);
+    }
+    data.copy(buf, offset);
+    fs.writeFile(path, buf);
+  }
+
+  flush(virtualAddress = 0, size = this.nextVirtualPage * this.pageSize) {
+    const startPage = Math.floor(virtualAddress / this.pageSize);
+    const pages = Math.ceil(size / this.pageSize);
+    for (let i = 0; i < pages; i++) {
+      const vpage = startPage + i;
+      const entry = this.pageTable.get(vpage);
+      if (!entry || !entry.file) continue;
+      if (entry.file.key) {
+        const ref = this.fileMappings.get(entry.file.key);
+        if (ref && ref.dirty) {
+          const buffer = Buffer.alloc(this.pageSize);
+          this.physical.memory.copy(
+            buffer,
+            0,
+            ref.frame * this.pageSize,
+            (ref.frame + 1) * this.pageSize
+          );
+          this._writeBack(ref.fs, ref.path, ref.offset, buffer);
+          ref.dirty = false;
+        }
+      } else if (entry.file.dirty) {
+        const buffer = Buffer.alloc(this.pageSize);
+        this.physical.memory.copy(
+          buffer,
+          0,
+          entry.frame * this.pageSize,
+          (entry.frame + 1) * this.pageSize
+        );
+        this._writeBack(entry.file.fs, entry.file.path, entry.file.offset, buffer);
+        entry.file.dirty = false;
+      }
+    }
+  }
+
+  mapFile(fs, path, size, options = {}) {
+    const { offset = 0, perms, shared = true } = options;
+    const pages = Math.ceil(size / this.pageSize);
+    const startPage = this.nextVirtualPage;
+    const fileBuf = fs.readFile(path);
+    for (let i = 0; i < pages; i++) {
+      const fileOffset = offset + i * this.pageSize;
+      const key = `${fs.volumeId}:${path}:${Math.floor(fileOffset / this.pageSize)}`;
+      let frame;
+      if (shared && this.fileMappings.has(key)) {
+        const ref = this.fileMappings.get(key);
+        frame = ref.frame;
+        ref.refCount++;
+      } else {
+        frame = this.physical.allocateFrame();
+        this.physical.memory.fill(
+          0,
+          frame * this.pageSize,
+          (frame + 1) * this.pageSize
+        );
+        fileBuf.copy(
+          this.physical.memory,
+          frame * this.pageSize,
+          fileOffset,
+          fileOffset + this.pageSize
+        );
+        if (shared) {
+          this.fileMappings.set(key, {
+            frame,
+            refCount: 1,
+            fs,
+            path,
+            offset: fileOffset,
+            dirty: false,
+          });
+        }
+      }
+      const vpage = startPage + i;
+      const entry = {
+        frame,
+        present: true,
+        perms: normalizePerms(perms),
+      };
+      if (shared) {
+        entry.file = { key };
+      } else {
+        entry.file = { fs, path, offset: fileOffset, shared: false, dirty: false };
+      }
+      this.pageTable.set(vpage, entry);
+    }
+    this.nextVirtualPage += pages;
+    return startPage * this.pageSize;
+  }
+
+  unmapFile(virtualAddress, size) {
+    this.flush(virtualAddress, size);
+    const startPage = Math.floor(virtualAddress / this.pageSize);
+    const pages = Math.ceil(size / this.pageSize);
+    for (let i = 0; i < pages; i++) {
+      const vpage = startPage + i;
+      const entry = this.pageTable.get(vpage);
+      if (!entry) continue;
+      if (entry.file && entry.file.key) {
+        const ref = this.fileMappings.get(entry.file.key);
+        if (ref) {
+          ref.refCount--;
+          if (ref.refCount === 0) {
+            this.physical.freeFrame(ref.frame);
+            this.fileMappings.delete(entry.file.key);
+          }
+        }
+      } else if (entry.file) {
+        this.physical.freeFrame(entry.frame);
+      } else if (entry.present && entry.frame !== null) {
+        this.physical.freeFrame(entry.frame);
+      }
+      this.pageTable.delete(vpage);
+      this.swapArea.delete(vpage);
+    }
+  }
+
   deallocate(virtualAddress, size) {
     this.unmap(virtualAddress, size);
   }
@@ -216,6 +346,33 @@ export class VirtualMemory {
       logError('VirtualMemory.translate', error, { address: virtualAddress, mode });
       createCrashDump('permission_violation', { address: virtualAddress, mode });
       throw error;
+    }
+    if (mode === 'write' && entry.file) {
+      if (entry.file.key) {
+        const ref = this.fileMappings.get(entry.file.key);
+        if (ref && ref.refCount > 1) {
+          const newFrame = this.physical.allocateFrame();
+          this.physical.memory.copy(
+            this.physical.memory,
+            newFrame * this.pageSize,
+            ref.frame * this.pageSize,
+            (ref.frame + 1) * this.pageSize
+          );
+          ref.refCount--;
+          entry.frame = newFrame;
+          entry.file = {
+            fs: ref.fs,
+            path: ref.path,
+            offset: ref.offset,
+            shared: false,
+            dirty: true,
+          };
+        } else if (ref) {
+          ref.dirty = true;
+        }
+      } else {
+        entry.file.dirty = true;
+      }
     }
     return entry.frame * this.pageSize + offset;
   }

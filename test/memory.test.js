@@ -2,6 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert';
 import { PhysicalMemory } from '../kernel/memory/physicalMemory.js';
 import { VirtualMemory } from '../kernel/memory/virtualMemory.js';
+import { FATFileSystem } from '../kernel/executive/fs/fat.js';
 
 // Test physical frame allocation and free
 
@@ -69,4 +70,36 @@ test('kernel heap allocation returns unique addresses', () => {
   const a = pm.allocateKernel(64);
   const b = pm.allocateKernel(32);
   assert.ok(b > a);
+});
+
+// File-backed mappings with copy-on-write
+
+test('file mappings flush and enforce copy-on-write', () => {
+  const pm = new PhysicalMemory(64);
+  const vm = new VirtualMemory(pm);
+  const fs = new FATFileSystem();
+  fs.mount();
+  fs.writeFile('/file.txt', Buffer.from('A'));
+  const addr1 = vm.mapFile(fs, '/file.txt', vm.pageSize);
+  const addr2 = vm.mapFile(fs, '/file.txt', vm.pageSize);
+  vm.writeByte(addr1, 'B'.charCodeAt(0));
+  assert.strictEqual(vm.readByte(addr2), 'A'.charCodeAt(0));
+  vm.unmapFile(addr1, vm.pageSize); // should flush changes
+  const data = fs.readFile('/file.txt');
+  assert.strictEqual(data[0], 'B'.charCodeAt(0));
+  assert.strictEqual(vm.readByte(addr2), 'A'.charCodeAt(0));
+  vm.unmapFile(addr2, vm.pageSize);
+});
+
+test('flush writes dirty pages without unmapping', () => {
+  const pm = new PhysicalMemory(64);
+  const vm = new VirtualMemory(pm);
+  const fs = new FATFileSystem();
+  fs.mount();
+  fs.writeFile('/flush.txt', Buffer.from('x'));
+  const addr = vm.mapFile(fs, '/flush.txt', vm.pageSize, { shared: false });
+  vm.writeByte(addr, 'y'.charCodeAt(0));
+  vm.flush(addr, vm.pageSize);
+  assert.strictEqual(fs.readFile('/flush.txt')[0], 'y'.charCodeAt(0));
+  vm.unmapFile(addr, vm.pageSize);
 });
