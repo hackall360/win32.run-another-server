@@ -18,8 +18,8 @@ export function is_empty(str){
 }
 
 export function includes(value, array){
-    if(!Array.isArray(array)) array = [];
-    return array.some(elm => elm.equals(value));
+    if(!Array.isArray(array)) return false;
+    return array.some(elm => elm === value || Object.is(elm, value));
 }
 
 
