@@ -1,6 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert';
 import { NetworkInterface, NetworkSegment, registerInterface, resolveAddress, _clear } from '../kernel/executive/net/ip.js';
+import * as ip from '../kernel/executive/net/ip.js';
 import { createSocket as createUDPSocket, _clear as clearUDP } from '../kernel/executive/net/udp.js';
 import { createServer, connect, _clear as clearTCP } from '../kernel/executive/net/tcp.js';
 import socket from '../kernel/executive/net/socket.js';
@@ -49,6 +50,7 @@ test('TCP connection and data transfer', async () => {
 
   const client = connect(a, '10.0.0.2', 8080);
   await new Promise((res) => client.on('connect', res));
+  await new Promise((r) => setTimeout(r, 5));
 
   let response;
   client.on('data', (d) => { response = d.toString(); });
@@ -60,17 +62,43 @@ test('TCP connection and data transfer', async () => {
   server.close();
 });
 
+test('TCP retransmits lost SYN-ACK', async () => {
+  const { a, b } = setupAdapters();
+  let drop = true;
+  const originalEmit = a.emit.bind(a);
+  a.emit = (ev, pkt) => {
+    if (drop && ev === 'packet' && pkt.protocol === 'TCP' && pkt.payload.type === 'SYN-ACK') {
+      drop = false; // drop first SYN-ACK
+      return;
+    }
+    return originalEmit(ev, pkt);
+  };
+
+  let serverConn;
+  const server = createServer(b, 8110, (sock) => { serverConn = sock; });
+  const client = connect(a, '10.0.0.2', 8110);
+  await new Promise((res) => client.on('connect', res));
+
+  a.emit = originalEmit;
+  client.close();
+  serverConn.close();
+  server.close();
+});
+
 test('socket.js provides unified API', async () => {
   const { a, b } = setupAdapters();
   const serverSock = socket({ type: 'tcp', adapter: b });
   serverSock.bind(9090);
+  let serverConn;
   serverSock.listen((conn) => {
+    serverConn = conn;
     conn.on('data', (d) => conn.send(d));
   });
 
   const clientSock = socket({ type: 'tcp', adapter: a });
   const conn = clientSock.connect('10.0.0.2', 9090);
   await new Promise((r) => conn.on('connect', r));
+  await new Promise((r) => setTimeout(r, 5));
   let echo;
   conn.on('data', (d) => { echo = d.toString(); });
   conn.send('echo');
