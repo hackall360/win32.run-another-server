@@ -1,6 +1,6 @@
 import { ProcessTable } from './process.js';
 import { systemToken } from './executive/security.js';
-import { timer } from '../src/lib/hal/index.js';
+import { timer, ipi } from '../src/lib/hal/index.js';
 import { logError } from '../system/eventLog.js';
 import { createCrashDump } from '../system/crashDump.js';
 import { KernelTimer } from './timer.js';
@@ -8,15 +8,48 @@ import { hasPendingApcs, deliverApcs } from './apc.js';
 import { processDpcs } from './dpc.js';
 
 export class Scheduler {
-  constructor(timeSliceMs = 50) {
+  constructor(timeSliceMs = 50, cpuCount = 1) {
     this.table = new ProcessTable();
-    this.readyQueue = [];
     this.blockedQueue = [];
     this.waitMap = new Map();
-    this.current = null;
     this.timeSliceMs = timeSliceMs;
-    this.timerId = null;
-    this.cpuContext = { registers: {}, sp: 0 };
+    this.cpus = Array.from({ length: cpuCount }, (_, id) => ({
+      id,
+      runQueue: [],
+      current: null,
+      timerId: null,
+      context: { registers: {}, sp: 0 }
+    }));
+    for (const cpu of this.cpus) {
+      ipi.register(cpu.id, (_ctx, type) => {
+        if (type === 'reschedule') {
+          this.schedule(cpu.id);
+        } else if (type === 'dpc') {
+          processDpcs(cpu.id);
+        }
+      });
+    }
+  }
+
+  get readyQueue() {
+    return this.cpus[0].runQueue;
+  }
+
+  get current() {
+    return this.cpus[0].current;
+  }
+
+  set current(proc) {
+    this.cpus[0].current = proc;
+    if (proc) proc.cpu = this.cpus[0];
+  }
+
+  get cpuContext() {
+    return this.cpus[0].context;
+  }
+
+  set cpuContext(ctx) {
+    this.cpus[0].context = ctx;
   }
 
   createProcess(priority = 0, token = systemToken, job = null, session = null) {
@@ -31,10 +64,27 @@ export class Scheduler {
     }
   }
 
-  enqueue(proc) {
+  enqueue(proc, skipIpi = false, targetCpu = null) {
     proc.state = 'ready';
-    this.readyQueue.push(proc);
-    this.readyQueue.sort((a, b) => b.priority - a.priority);
+    let cpu = targetCpu;
+    const thread = proc.threads[0];
+    if (!cpu) {
+      if (thread && typeof thread.preferredCpu === 'number' && this.cpus[thread.preferredCpu]) {
+        cpu = this.cpus[thread.preferredCpu];
+      } else {
+        cpu = this.cpus.reduce((a, b) => {
+          const loadA = a.runQueue.length + (a.current ? 1 : 0);
+          const loadB = b.runQueue.length + (b.current ? 1 : 0);
+          return loadA <= loadB ? a : b;
+        });
+      }
+    }
+    proc.cpu = cpu;
+    cpu.runQueue.push(proc);
+    cpu.runQueue.sort((a, b) => b.priority - a.priority);
+    if (!skipIpi) {
+      ipi.send(cpu.id, 'reschedule');
+    }
   }
 
   blockThread(thread, object, timeout, alertable = false) {
@@ -44,7 +94,8 @@ export class Scheduler {
         resolve('apc');
         return;
       }
-      const proc = this.current;
+      const cpu = this.cpus.find(c => c.current && c.current.threads.includes(thread)) || this.cpus[0];
+      const proc = cpu.current;
       thread.state = 'blocked';
       if (proc) {
         proc.state = 'waiting';
@@ -70,7 +121,7 @@ export class Scheduler {
         if (!this.waitMap.has(kt)) this.waitMap.set(kt, new Set());
         this.waitMap.get(kt).add(record);
       }
-      this.schedule();
+      this.schedule(cpu.id);
     });
   }
 
@@ -107,67 +158,76 @@ export class Scheduler {
     }
   }
 
-  schedule() {
+  schedule(cpuId = 0) {
+    const cpu = this.cpus[cpuId];
     try {
-      processDpcs();
-      if (this.current && this.current.state === 'running') {
-        this.enqueue(this.current);
+      processDpcs(cpuId);
+      if (cpu.current && cpu.current.state === 'running') {
+        this.enqueue(cpu.current, true, cpu);
       }
-      const next = this.readyQueue.shift();
+      const next = cpu.runQueue.shift();
       if (next) {
-        this.contextSwitch(next);
+        this.contextSwitch(next, cpuId);
       } else {
-        this.current = null;
+        cpu.current = null;
       }
-      return this.current;
+      return cpu.current;
     } catch (err) {
       logError('Scheduler.schedule', err);
-      createCrashDump('scheduler_schedule', { current: this.current });
+      createCrashDump('scheduler_schedule', { current: cpu.current });
       throw err;
     }
   }
 
-  contextSwitch(proc) {
-    if (this.current) {
-      const thread = this.current.threads[0];
+  contextSwitch(proc, cpuId = 0) {
+    const cpu = this.cpus[cpuId];
+    if (cpu.current) {
+      const thread = cpu.current.threads[0];
       if (thread) {
-        thread.context = { ...this.cpuContext };
+        thread.context = { ...cpu.context };
       }
-      this.current.state = 'ready';
+      cpu.current.state = 'ready';
     }
-    this.current = proc;
+    cpu.current = proc;
+    proc.cpu = cpu;
     proc.state = 'running';
     const thread = proc.threads[0];
     if (thread) {
-      this.cpuContext = { ...thread.context };
+      cpu.context = { ...thread.context };
     }
   }
 
   start() {
     this.stop();
-    this.timerId = timer.setTimeout(() => {
-      this.schedule();
-      this.start();
-    }, this.timeSliceMs);
+    for (const cpu of this.cpus) {
+      const tick = () => {
+        this.schedule(cpu.id);
+        cpu.timerId = timer.setTimeout(tick, this.timeSliceMs);
+      };
+      cpu.timerId = timer.setTimeout(tick, this.timeSliceMs);
+    }
   }
 
   stop() {
-    if (this.timerId !== null) {
-      timer.clearTimeout(this.timerId);
-      this.timerId = null;
+    for (const cpu of this.cpus) {
+      if (cpu.timerId !== null) {
+        timer.clearTimeout(cpu.timerId);
+        cpu.timerId = null;
+      }
     }
   }
 
   setTimeSlice(ms) {
     this.timeSliceMs = ms;
-    if (this.timerId !== null) {
+    if (this.cpus.some(cpu => cpu.timerId !== null)) {
       this.start();
     }
   }
 
   setPriority(proc, priority) {
     proc.priority = priority;
-    this.readyQueue.sort((a, b) => b.priority - a.priority);
+    const cpu = proc.cpu || this.cpus[0];
+    cpu.runQueue.sort((a, b) => b.priority - a.priority);
   }
 }
 

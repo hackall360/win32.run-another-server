@@ -7,6 +7,7 @@ export class Thread {
     this.state = 'ready';
     this.context = { registers: {}, sp: 0 };
     this.scheduler = scheduler;
+    this.preferredCpu = 0;
   }
 
   saveContext(ctx) {
