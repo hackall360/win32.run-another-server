@@ -10,7 +10,7 @@ test('process creation requires logged-on token with privilege', () => {
   assert.throws(() => table.createProcess(0, raw));
   addUser('alice', 'pw');
   const token = logonUser('alice', 'pw');
-  token.privileges.add('createProcess');
+  token.addPrivilege('createProcess');
   const proc = table.createProcess(0, token);
   assert.strictEqual(proc.pid, 1);
 });

@@ -13,7 +13,7 @@ test('logonUser authenticates credentials', () => {
 test('impersonation affects privileges', () => {
   addUser('admin', 'pass');
   const admin = logonUser('admin', 'pass');
-  admin.privileges.add('createProcess');
+  admin.addPrivilege('createProcess');
 
   addUser('guest', 'guest');
   const guest = logonUser('guest', 'guest');
