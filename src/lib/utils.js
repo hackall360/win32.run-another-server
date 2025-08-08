@@ -1,15 +1,15 @@
 import mime_db from './mime.json' with { type: 'json' };
 
 export function compile_params(new_params){
-    
+
     const urlSearchParams = new URLSearchParams(window.location.search);
-    let params = Object.fromEntries(urlSearchParams.entries());
-    for(let key of Object.keys(new_params)){
-        params[key] = new_params[key];
-    }
-    return params = Object.keys(params)
+    const params = {
+        ...Object.fromEntries(urlSearchParams.entries()),
+        ...new_params
+    };
+    return Object.keys(params)
     .filter(key => params[key] != null)
-    .map(key => `${key}=${params[key]}`)
+    .map(key => `${encodeURIComponent(key)}=${encodeURIComponent(params[key])}`)
     .join('&').trim();
 }
 
