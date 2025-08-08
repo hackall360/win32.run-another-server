@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert';
 import { JSDOM } from 'jsdom';
-import { includes, click_outside } from '../src/lib/utils.js';
+import { includes, click_outside, compile_params } from '../src/lib/utils.js';
 
 test('includes handles primitive values', () => {
   assert.strictEqual(includes(2, [1, 2, 3]), true);
@@ -41,4 +41,15 @@ test('click_outside dispatches node in event.detail', () => {
   delete global.window;
   delete global.document;
   delete global.CustomEvent;
+});
+
+test('compile_params merges params and encodes special characters', () => {
+  const dom = new JSDOM('', { url: 'https://example.com/?q=hello%20world' });
+  global.window = dom.window;
+
+  const result = compile_params({ 'a b': 'c&d' });
+
+  assert.strictEqual(result, 'q=hello%20world&a%20b=c%26d');
+
+  delete global.window;
 });
