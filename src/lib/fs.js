@@ -305,7 +305,7 @@ export async function new_fs_item_raw(item, parent_id){
     if(item.file != null){
         item.url = short.generate();
         await idb.set(item.url, item.file);
-        item.size = Math.ceil(file.size/1024);
+        item.size = Math.ceil(item.file.size / 1024);
         delete item.file;
     } else if(item.executable){
         item.url = './programs/webapp.jsx';
