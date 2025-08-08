@@ -16,15 +16,25 @@ test('includes works with objects without equals method', () => {
 });
 
 test('compile_params merges params and encodes spaces', () => {
-  global.window = { location: { search: '?existing=1' } };
-  const result = compile_params({ 'new param': 'hello world' });
-  assert.strictEqual(result, 'existing=1&new%20param=hello%20world');
-  delete global.window;
+  const originalWindow = global.window;
+  try {
+    global.window = { location: { search: '?existing=1' } };
+    const result = compile_params({ 'new param': 'hello world' });
+    assert.strictEqual(result, 'existing=1&new%20param=hello%20world');
+  } finally {
+    if (originalWindow === undefined) delete global.window;
+    else global.window = originalWindow;
+  }
 });
 
 test('compile_params encodes special characters', () => {
-  global.window = { location: { search: '' } };
-  const result = compile_params({ 'na&me': 'v=1&b' });
-  assert.strictEqual(result, 'na%26me=v%3D1%26b');
-  delete global.window;
+  const originalWindow = global.window;
+  try {
+    global.window = { location: { search: '' } };
+    const result = compile_params({ 'na&me': 'v=1&b' });
+    assert.strictEqual(result, 'na%26me=v%3D1%26b');
+  } finally {
+    if (originalWindow === undefined) delete global.window;
+    else global.window = originalWindow;
+  }
 });

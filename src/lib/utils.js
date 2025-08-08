@@ -1,6 +1,6 @@
 import mime_db from './mime.json' with { type: 'json' };
 
-export function compile_params(new_params){
+export function compile_params(new_params = {}){
 
     const urlSearchParams = new URLSearchParams(window.location.search);
     const params = {
@@ -10,7 +10,7 @@ export function compile_params(new_params){
     return Object.keys(params)
     .filter(key => params[key] != null)
     .map(key => `${encodeURIComponent(key)}=${encodeURIComponent(params[key])}`)
-    .join('&').trim();
+    .join('&');
 }
 
 export function is_empty(str){
